@@ -1,0 +1,77 @@
+To address the issues observed, we need to tackle both the CORS error and the missing database column. Here's a step-by-step guide to help you resolve these problems:
+
+### CORS Configuration Issue
+
+The CORS error indicates that requests from certain origins are being blocked. You need to review and update the CORS settings in your backend application to allow the desired domains. Here’s how you can proceed:
+
+1. **Identify Allowed Origins**: Determine which origins should be permitted to access your resources. This typically includes your web application's domain and possibly others if you have a multi-origin setup.
+
+2. **Update CORS Settings**: Depending on your server framework, the method of updating CORS settings may differ. Here are some general methods for common frameworks:
+
+   - **Express.js (Node.js)**: Use the `cors` middleware.
+     ```javascript
+     const cors = require('cors');
+     const app = require('express')();
+     
+     // Allow specific origins
+     const allowedOrigins = ['http://your-domain.com', 'http://another-domain.com'];
+     app.use(cors({
+       origin: function(origin, callback) {
+         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+           callback(null, true);
+         } else {
+           callback(new Error('Not allowed by CORS'));
+         }
+       }
+     }));
+     ```
+   - **Django**: Use `django-cors-headers` package.
+     ```python
+     # settings.py
+     INSTALLED_APPS = [
+         ...
+         'corsheaders',
+         ...
+     ]
+
+     MIDDLEWARE = [
+         ...,
+         'corsheaders.middleware.CorsMiddleware',
+         ...,
+     ]
+
+     CORS_ALLOWED_ORIGINS = [
+         "http://your-domain.com",
+         "http://another-domain.com",
+     ]
+     ```
+
+3. **Testing**: After updating the configuration, restart your server and test the application to ensure that requests from the specified domains are now being allowed without CORS errors.
+
+### Database Schema Issue
+
+The error specifying that the column `cv_submissions.revision` does not exist suggests that your database schema may be outdated or misconfigured. Here's how you can address this:
+
+1. **Verify Schema**: Review the database migration files or schema definition to confirm that the `revision` column is indeed expected to be part of the `cv_submissions` table.
+
+2. **Run Migrations**: If your project uses a migration tool (such as Django’s migrations, Alembic for SQLAlchemy, or Rails migrations), ensure you have applied all up-to-date migrations to your production database.
+   
+   - For example, using Django:
+     ```bash
+     python manage.py migrate
+     ```
+
+   - Or, if you use Alembic with SQLAlchemy:
+     ```bash
+     alembic upgrade head
+     ```
+
+3. **Manual Schema Check**: If migrations are not resolving the issue, manually inspect the database schema to ensure the column exists. If it doesn’t, you might need to add it:
+   
+   ```sql
+   ALTER TABLE cv_submissions ADD COLUMN revision VARCHAR(255);
+   ```
+
+4. **Synchronize Environments**: Ensure that the schema changes are reflected in all environments (testing, staging, production) to avoid future discrepancies.
+
+By addressing both the CORS configuration and the database schema, you should see a resolution to the endpoint unresponsiveness and related issues. Make sure to maintain backups and conduct testing after making these changes to ensure stability.

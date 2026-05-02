@@ -1,0 +1,30 @@
+To address the issue with LDAP integration on your pfSense router, here’s a focused plan to get the group membership queries working correctly:
+
+1. **Create the User "mahdi" Correctly:**
+   - Use phpLDAPadmin or similar LDAP management tool to create a new user "mahdi" using the **inetOrgPerson** object class, which is more appropriate for user entries. Ensure the `uid`, `cn`, and `sn` attributes are set. This avoids the complications related to the `posixAccount` object class that requires a `gidNumber`.
+
+2. **Add "mahdi" to the "VPN-Users" Group:**
+   - Once "mahdi" is created correctly, navigate to the group "VPN-Users" in phpLDAPadmin.
+   - Add "mahdi" as a member. This can typically be done by adding the User DN (e.g., `uid=mahdi,ou=people,dc=demo,dc=local`) to the `member` attribute of the group.
+
+3. **Verify LDAP Configuration in pfSense:**
+   - Make sure pfSense is configured to look for user entries properly. Verify the settings:
+     - **User attribute** is set to `uid`.
+     - **Group attribute** is set to `cn`.
+     - **Group member attribute** is set to `member`.
+     - Confirm that **RFC 2307 Groups** is unchecked as you're using non-POSIX group configurations.
+
+4. **Test Authentication:**
+   - In pfSense, use the Diagnostics > Authentication menu to test user authentication for "mahdi". Check both authentication and group membership recognition.
+   - If group membership is still not displayed, double-check the LDAP ACLs to ensure pfSense has read access to the necessary attributes (`member` and `objectClass`).
+
+5. **Consider LDIF for Direct LDAP Manipulation:**
+   - If comfortable with using LDIF files for LDAP entries:
+     - Create an LDIF entry for "mahdi" using inetOrgPerson and a modification LDIF file to add "mahdi" to the "VPN-Users" group.
+     - This might be beneficial if the GUI continues to pose challenges.
+
+6. **Further Assistance:**
+   - If these steps do not resolve the issue, consider increasing the logging level in pfSense for detailed error messages or consult the LDAP server logs for any bind or search issues.
+   - Feel free to ask for assistance specific to creating LDIF files if manual LDAP entry creation is preferable.
+
+This structured approach should help in resolving the group membership issues and ensure that LDAP integration on your pfSense router works as intended. If you encounter any specific error messages during these steps, they can also provide additional clues on what might need to be adjusted.

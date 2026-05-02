@@ -1,0 +1,26 @@
+**Context Bootstrap:**
+
+The user is integrating LDAP with a pfSense router for central user management but is facing issues with group membership queries not being recognized. The current LDAP configuration is set to use Directory-style groups (objectClass: groupOfNames) with member attributes as DNs. The user has verified that the LDAP server is correctly configured, but pfSense is not displaying group memberships during authentication tests.
+
+**Technical Environment:**
+- LDAP Server: ldaps://ldap.demo.local
+- Base DN: dc=demo,dc=local
+- User DN: uid=mahdi,ou=people,dc=demo,dc=local
+- Group DN: cn=VPN-Users,ou=groups,dc=demo,dc=local
+- pfSense settings:
+  - User attribute: uid
+  - Group attribute: cn
+  - Group member attribute: member
+  - Group object class: groupOfNames
+  - RFC 2307 Groups: unchecked
+
+**What Has Been Tried:**
+- LDAP queries confirmed that the user "testuser" is correctly added to the "VPN-Users" group.
+- The user "mahdi" was attempted to be created using the wrong template (posixAccount), which requires gidNumber, leading to errors.
+- The user has attempted to add "mahdi" to the group but has not successfully created the user in the correct format.
+
+**Next Steps/Pending Questions:**
+1. Create a new user "mahdi" using the inetOrgPerson template in phpLDAPadmin, ensuring no gidNumber is required.
+2. Add the user "mahdi" to the "VPN-Users" group.
+3. Test the authentication in pfSense to verify that the group membership is recognized.
+4. Confirm if the user wants to proceed with creating the user and group through the GUI or if they need further assistance with LDIF files for direct LDAP manipulation.

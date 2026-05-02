@@ -1,0 +1,418 @@
+# User input
+i integrated my ldap in my pfsense router for central user management , however the querries don't read the group membership . i think the error is in the feilds shown in the screenshot mainly Group member attribute. i want to debug first , and run some querries , i can exec into the container and run commands or use the gui of phpldapadmin
+# AI reply
+You’re right to look at Group member attribute—and also Group object class. From your pfSense config I can see it’s set to:
+
+user attr: uid
+group attr: cn
+group member attr: member
+group object class: objectClass (this one is the red flag)
+RFC2307 unchecked (so pfSense expects “Directory style” groups, not POSIX)
+What pfSense expects vs. what your LDAP might have
+If your groups are groupOfNames (or groupOfUniqueNames) with members listed as DNs in the member (or uniqueMember) attribute, then:
+Group member attribute should be member (or uniqueMember)
+Group object class must be groupOfNames (or groupOfUniqueNames)
+RFC2307 should stay unchecked
+If your groups are posixGroup (RFC2307) with members listed as usernames in memberUid, then:
+Tick RFC 2307 Groups
+Group member attribute should be memberUid
+Group object class must be posixGroup
+
+Right now yours says member (DN-style) but the object class is set to the attribute name “objectClass” instead of the value like groupOfNames. That will break group lookups.
+
+Quick debug plan (works from shell or phpLDAPadmin)
+
+Replace host/creds if needed. Your base looks to be dc=demo,dc=local, bind DN cn=admin,dc=demo,dc=local.
+
+1) See how your groups are actually stored
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  '(objectClass=*)' cn objectClass member uniqueMember memberUid
+If you see objectClass: groupOfNames and member: uid=...,ou=people,... → you’re in the Directory style camp.
+If you see objectClass: posixGroup and memberUid: mahdi → you’re in RFC2307 camp.
+2) Check a user’s DN (needed for DN-style lookup)
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=people,dc=demo,dc=local' '(uid=mahdi)' dn
+3A) If groups are DN-style (groupOfNames)
+
+Which groups contain this user DN?
+
+USER_DN='uid=mahdi,ou=people,dc=demo,dc=local'
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  "(&(objectClass=groupOfNames)(member=$USER_DN))" cn
+3B) If groups are POSIX (posixGroup)
+
+Which groups list this uid?
+
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  '(&(objectClass=posixGroup)(memberUid=mahdi))' cn
+
+If you’ve enabled the memberOf overlay in OpenLDAP you can also check:
+
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=people,dc=demo,dc=local' '(uid=mahdi)' memberOf
+Fix in pfSense (based on what you find)
+Case A — Directory style groups
+Group member attribute: member (or uniqueMember if that’s what you have)
+Group object class: groupOfNames (or groupOfUniqueNames)
+RFC 2307 Groups: unchecked
+Case B — RFC 2307 (POSIX) groups
+Check “RFC 2307 Groups”
+Group member attribute: memberUid
+Group object class: posixGroup
+
+Then use Diagnostics → Authentication in pfSense to test a username/password and verify that the expected Groups appear in the result. Your current LDAP server entry (name “OpenLDAP_Entreprise”) and Base DN/Auth containers are already set to dc=demo,dc=local with people/groups OUs, so you’ll only need to correct the two fields above.
+
+If you want, paste the output of step 1) (the group entries showing objectClass and member attribute) and I’ll map the exact pfSense values for you.
+# User input
+root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=groups,dc=demo,dc=local' \ > '(objectClass=*)' cn objectClass member uniqueMember memberUid # extended LDIF # # LDAPv3 # base <ou=groups,dc=demo,dc=local> with scope subtree # filter: (objectClass=*) # requesting: cn objectClass member uniqueMember memberUid # # groups, demo.local dn: ou=groups,dc=demo,dc=local objectClass: organizationalUnit objectClass: top # VPN-Users, groups, demo.local dn: cn=VPN-Users,ou=groups,dc=demo,dc=local objectClass: groupOfNames objectClass: top cn: VPN-Users member: uid=testuser,ou=people,dc=demo,dc=local # search result search: 2 result: 0 Success # numResponses: 3 # numEntries: 2 root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=people,dc=demo,dc=local' '(uid=mahdi)' dn # extended LDIF # # LDAPv3 # base <ou=people,dc=demo,dc=local> with scope subtree # filter: (uid=mahdi) # requesting: dn # # search result search: 2 result: 0 Success # numResponses: 1 root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=groups,dc=demo,dc=local' \ > '(&(objectClass=posixGroup)(memberUid=mahdi))' cn # extended LDIF # # LDAPv3 # base <ou=groups,dc=demo,dc=local> with scope subtree # filter: (&(objectClass=posixGroup)(memberUid=mahdi)) # requesting: cn # # search result search: 2 result: 0 Success # numResponses: 1 root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=people,dc=demo,dc=local' '(uid=mahdi)' memberOf # extended LDIF # # LDAPv3 # base <ou=people,dc=demo,dc=local> with scope subtree # filter: (uid=mahdi) # requesting: memberOf # # search result search: 2 result: 0 Success # numResponses: 1
+# Ai reply
+Great—your searches tell us exactly what’s going on:
+
+Your groups are Directory-style: objectClass: groupOfNames with DN-valued member attributes.
+There are no posixGroup/memberUid entries.
+uid=mahdi doesn’t exist yet (no DN returned), and the memberOf overlay isn’t present (no memberOf values).
+What to set in pfSense
+
+Use Directory-style settings:
+
+Group member attribute: member
+Group object class: groupOfNames
+RFC 2307 Groups: unchecked
+
+(Your other fields—User naming uid, Group naming cn—are fine.)
+
+Quick checks you can run now
+
+Show which groups contain the DN member entries (this already works for testuser):
+
+USER_DN='uid=testuser,ou=people,dc=demo,dc=local'
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  "(&(objectClass=groupOfNames)(member=$USER_DN))" cn
+
+If/when you create mahdi and add them to a group, test the same way:
+
+USER_DN='uid=mahdi,ou=people,dc=demo,dc=local'
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  "(&(objectClass=groupOfNames)(member=$USER_DN))" cn
+Add a user to the group (two ways)
+
+phpLDAPadmin (GUI):
+
+Open cn=VPN-Users,ou=groups,...
+Edit → add member → pick the user’s DN (e.g., uid=mahdi,ou=people,...) → Save.
+
+CLI (LDIF):
+Create a file add-mahdi-to-vpn.ldif:
+
+dn: cn=VPN-Users,ou=groups,dc=demo,dc=local
+changetype: modify
+add: member
+member: uid=mahdi,ou=people,dc=demo,dc=local
+
+Apply it:
+
+ldapmodify -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' -f add-mahdi-to-vpn.ldif
+Optional: memberOf overlay
+
+pfSense doesn’t require memberOf, but if you want reverse links on users you’d need to enable the memberOf overlay in slapd (cn=config) and then re-add group memberships so it backfills. If you want that, say the word and I’ll give you the exact ldapmodify snippets.
+
+Final verification (pfSense)
+
+After fixing the two fields above and adding the user to the group:
+
+Go to Diagnostics → Authentication in pfSense.
+Test login for the user; you should see Groups: VPN-Users in the result.
+
+If the test still doesn’t show groups, paste that output and I’ll zero in on it.
+#User input 
+root@ldap:/# USER_DN='uid=testuser,ou=people,dc=demo,dc=local' root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=groups,dc=demo,dc=local' \ > "(&(objectClass=groupOfNames)(member=$USER_DN))" cn # extended LDIF # # LDAPv3 # base <ou=groups,dc=demo,dc=local> with scope subtree # filter: (&(objectClass=groupOfNames)(member=uid=testuser,ou=people,dc=demo,dc=local)) # requesting: cn # # VPN-Users, groups, demo.local dn: cn=VPN-Users,ou=groups,dc=demo,dc=local cn: VPN-Users # search result search: 2 result: 0 Success # numResponses: 2 # numEntries: 1 root@ldap:/# USER_DN='uid=mahdi,ou=people,dc=demo,dc=local' root@ldap:/# ldapsearch -H ldaps://ldap.demo.local -x \ > -D 'cn=admin,dc=demo,dc=local' -w 'admin' \ > -b 'ou=groups,dc=demo,dc=local' \ > "(&(objectClass=groupOfNames)(member=$USER_DN))" cn # extended LDIF # # LDAPv3 # base <ou=groups,dc=demo,dc=local> with scope subtree # filter: (&(objectClass=groupOfNames)(member=uid=mahdi,ou=people,dc=demo,dc=local)) # requesting: cn # # search result search: 2 result: 0 Success # numResponses: 1 yet when i applied your suggestions i still have the same result , it doesn't register the group
+# AI reply
+Thanks for running those tests — the picture is clearer now. Let’s break down what we see:
+
+LDAP side is correct
+testuser is in the VPN-Users group (groupOfNames + member DN).
+
+Query returns the group cleanly:
+
+dn: cn=VPN-Users,ou=groups,dc=demo,dc=local
+cn: VPN-Users
+✅ LDAP is configured properly.
+pfSense side shows login works, but “member of groups” is blank
+That means pfSense can bind + check password, but its group lookup filter isn’t matching.
+Common pitfalls in pfSense LDAP group mapping
+1) Group Object Class field
+
+Make sure it is set to:
+
+groupOfNames
+
+and not objectClass.
+This is the most common error — pfSense literally tries to match objectClass=objectClass otherwise, which never finds a group.
+
+2) Scope / containers
+
+Check in System > User Manager > Authentication Servers > [your LDAP server]:
+
+Group naming attribute: cn
+Group member attribute: member
+Group object class: groupOfNames
+Authentication containers: include ou=people,dc=demo,dc=local
+Group containers: include ou=groups,dc=demo,dc=local
+
+If you don’t set Group containers, pfSense won’t even search ou=groups.
+
+3) Case sensitivity
+
+Sometimes pfSense is picky — groupOfNames vs groupofnames. Stick with exactly how it appears in LDAP (groupOfNames).
+
+4) Group name mismatch in pfSense GUI
+
+Even if pfSense pulls groups, it won’t show them in the auth test unless you’ve also created corresponding pfSense groups (with the same name as LDAP cn).
+So:
+
+Go to System > User Manager > Groups
+Add group VPN-Users (must match LDAP cn)
+Assign privileges if needed.
+
+Only then will pfSense display:
+
+User testuser authenticated successfully. This user is a member of groups: VPN-Users
+What to try next
+Double-check your Group Object Class field = groupOfNames.
+Confirm Group Container in pfSense is set to ou=groups,dc=demo,dc=local.
+Create a local pfSense group called VPN-Users (name must match LDAP cn exactly).
+Re-run Diagnostics → Authentication.
+
+👉 Question: Do you want me to walk you through how to check/edit the <ldap> section in your pfSense XML config (the one you exported) to confirm these values, so we’re 100% sure pfSense is searching the right container?
+# User input 
+how about we create a new user , maybe the error is there , i tried to do it in the gui but i got an error here , can it be the cause ?
+# AI reply
+Yes — that explains it. 🚨
+
+The error in phpLDAPadmin (“This attribute is required: GID Number”) means that the template you picked to create a user is for posixAccount objects. Those always require both uidNumber and gidNumber.
+
+But in your LDAP tree, groups are groupOfNames, not posixGroup. There’s a mismatch:
+
+Your groups are DN-based (groupOfNames with member attributes).
+The template you used for the user expects POSIX attributes (uidNumber, gidNumber).
+Result: The user ends up with POSIX-style attributes, but pfSense is looking for DN-style membership.
+
+That’s why pfSense isn’t showing groups: the testuser you created is missing the right structural object class and/or DN membership attributes.
+
+Fix options
+Option 1: Create DN-style users (simplest for pfSense)
+
+When you create a user in phpLDAPadmin:
+
+Choose the “Generic: User Account” or “inetOrgPerson” template (instead of posixAccount).
+Required attributes are then just cn, sn, uid, userPassword.
+No gidNumber or uidNumber needed.
+After saving, add the user’s DN (uid=...,ou=people,...) to the group’s member attribute (cn=VPN-Users,...).
+
+This matches your existing groups (groupOfNames). pfSense will then see group membership correctly.
+
+Option 2: Stick to POSIX (RFC2307) everywhere
+
+If you want to use posixAccount/posixGroup:
+
+Keep uidNumber and gidNumber on users.
+Switch groups to posixGroup and use memberUid.
+In pfSense, enable RFC 2307 Groups and set Group member attribute = memberUid, Group object class = posixGroup.
+
+This is more work since you’d have to recreate/modify groups.
+
+Recommended for your current setup
+
+Go with Option 1 (DN-style):
+
+Delete or ignore the broken testuser.
+Re-create a new user using the inetOrgPerson template (or manually pick inetOrgPerson + organizationalPerson + person + top).
+Add that DN to cn=VPN-Users.
+Test again in pfSense → it should finally show VPN-Users.
+
+👉 Do you want me to give you the exact LDIF snippet to add a new DN-style user (mahdi) directly with ldapadd (so you can skip the phpLDAPadmin template hassle)?
+#User input 
+when i try to create using Generic: User Account i get the gid error , i think i have to create it first . if you can generate an ldif for both and i just import it that would be good
+# AI reply
+Perfect—let’s do it with LDIF so we bypass the phpLDAPadmin template that’s forcing POSIX fields.
+
+Below are copy-paste LDIFs for your current setup (DN-style groups). They’ll create a plain LDAP user and add them to VPN-Users.
+
+1) Create a DN-style user (no gidNumber needed)
+
+File: 01-create-user-mahdi.ldif
+
+dn: uid=mahdi,ou=people,dc=demo,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: mahdi
+cn: Mahdi Example
+sn: Example
+givenName: Mahdi
+mail: mahdi@demo.local
+userPassword: {SSHA}REPLACE_WITH_HASH
+
+Make a password hash:
+
+slappasswd -s 'YourSecretPassword'
+# copy the hash (starts with {SSHA}) into the LDIF
+
+Apply it:
+
+ldapadd -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -f 01-create-user-mahdi.ldif
+2) Add the user to the existing group VPN-Users
+
+File: 02-add-mahdi-to-vpn-users.ldif
+
+dn: cn=VPN-Users,ou=groups,dc=demo,dc=local
+changetype: modify
+add: member
+member: uid=mahdi,ou=people,dc=demo,dc=local
+
+Apply it:
+
+ldapmodify -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -f 02-add-mahdi-to-vpn-users.ldif
+3) Verify on LDAP
+ldapsearch -H ldaps://ldap.demo.local -x \
+  -D 'cn=admin,dc=demo,dc=local' -w 'admin' \
+  -b 'ou=groups,dc=demo,dc=local' \
+  "(&(objectClass=groupOfNames)(member=uid=mahdi,ou=people,dc=demo,dc=local))" cn
+
+You should see cn: VPN-Users.
+
+Then re-run pfSense → Diagnostics → Authentication with user mahdi. If you’ve created a pfSense local group named exactly VPN-Users, the test page will list it for this user.
+
+(Optional) If you truly want POSIX users/groups later
+
+Only use this if you decide to switch to RFC2307 everywhere. Otherwise skip this.
+
+Create a posixGroup (example gid 1000):
+
+dn: cn=users,ou=groups,dc=demo,dc=local
+objectClass: top
+objectClass: posixGroup
+cn: users
+gidNumber: 1000
+
+Add POSIX attributes to the user:
+
+dn: uid=mahdi,ou=people,dc=demo,dc=local
+changetype: modify
+add: objectClass
+objectClass: posixAccount
+-
+add: uidNumber
+uidNumber: 2000
+-
+add: gidNumber
+gidNumber: 1000
+-
+add: homeDirectory
+homeDirectory: /home/mahdi
+-
+add: loginShell
+loginShell: /bin/bash
+
+If you go POSIX, in pfSense enable RFC 2307 Groups and use memberUid/posixGroup. But for your current groupOfNames setup, the first two LDIFs are all you need.
+
+If you hit any errors running those commands, paste the exact output and I’ll adjust the LDIF on the spot.
+# User input 
+and i have to do it in the gui , create a GID , then user , then make it in the group
+# AI reply
+Yes, you can do all of that through the phpLDAPadmin GUI. Since you’re already in there, here’s the exact sequence to create a proper user that pfSense can see.
+
+Step 1: Create the group VPN-Users (if it doesn’t exist)
+First, make sure the group exists with the right object class (groupOfNames).
+
+In phpLDAPadmin → click your LDAP server → Browse
+Click cn=groups,dc=demo,dc=local
+Top menu → Add Entry
+Select objectClass: groupOfNames
+Required fields:
+cn: VPN-Users
+dc: demo
+dc: local
+member: Leave empty for now
+Click Create.
+Step 2: Create the user Mahdi (no gidNumber needed)
+Now create the user so pfSense can authenticate it.
+
+Go back to Browse → click ou=people,dc=demo,dc=local
+Add Entry
+Choose objectClass: inetOrgPerson (this is the key — no gidNumber)
+Required fields:
+uid: mahdi
+cn: Mahdi Example
+sn: Example
+givenName: Mahdi
+mail: [EMAIL_ADDRESS]
+userPassword: {SSHA}YOUR_HASH
+To create the password hash:
+
+In another tab or terminal, run:
+
+slappasswd -s 'YourSecretPassword'
+Copy the hash (it starts with {SSHA}). Paste it into the userPassword field.
+
+Click Create.
+Step 3: Add the user to the group
+You have two ways to do this:
+
+Method A: Edit the group (cleaner)
+Go back to Browse → cn=groups,dc=demo,dc=local
+Click the VPN-Users entry you just created
+Top menu → Modify Entry
+Under Attributes → click Add
+Attribute: member
+Value: uid=mahdi,ou=people,dc=demo,dc=local
+Click Update.
+Method B: Edit the user
+Go to Browse → ou=people,dc=demo,dc=local
+Click the new user Mahdi
+Modify Entry
+Add member attribute → value: uid=mahdi,ou=people,dc=demo,dc=local
+Note: If you see memberUid instead, use that — but based on your earlier tests, member is what your setup expects.
+
+Step 4: Test in pfSense
+Go to pfSense → Diagnostics → Authentication
+Server: LDAP - LDAP Server
+Username: mahdi
+Password: [PASSWORD]
+Click Test.
+It should now show:
+
+User testuser authenticated successfully.
+This user is a member of groups: VPN-Users
+Quick cheat sheet
+When adding user:
+
+Use objectClass: inetOrgPerson
+Required: uid, cn, sn, givenName, mail, userPassword
+Avoid: posixAccount → requires gidNumber
+When adding to group:
+
+Add member attribute: [dn of user]
+Verify:
+
+pfSense must show the group name in the authentication test result.
+Summary
+You don’t need to touch the command line at all. Use the phpLDAPadmin GUI with inetOrgPerson to create the user, then add the user’s DN to the group’s member attribute. That’s it — you’re all set for pfSense group-based authentication.

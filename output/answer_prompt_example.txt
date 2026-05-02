@@ -1,0 +1,41 @@
+Based on the logs provided, there are several issues to address:
+
+### 1. CORS Error
+
+The error you're seeing in the backend logs related to CORS: `Not allowed by CORS` indicates that a client is trying to make a request to your backend from a different origin, which is being blocked because the request does not meet the server's CORS policy. Here’s what you can do to resolve this:
+
+- **Check CORS Configuration**: Look at the CORS settings in your backend application. This is typically handled in middleware, and you'll want to ensure that the desired origins are included. If you want to allow all origins temporarily for testing, you can set the header `Access-Control-Allow-Origin` to `*`.
+  
+- **Specific Allowance**: Ideally, specify only the necessary origins to reduce the risk of security vulnerabilities.
+
+- **Headers and Methods**: Ensure that headers like `Access-Control-Allow-Headers` and `Access-Control-Allow-Methods` are correctly set to allow the specific headers and methods your client will send.
+
+### 2. Database Schema Issue
+
+The error message `column cv_submissions.revision does not exist` suggests that the database schema is missing the `revision` column in the `cv_submissions` table. Here’s how you can address this:
+
+- **Check Database Migrations**: If you’re using a migration tool (like Flyway, Liquibase, Django Migrations, etc.), ensure that you've run all necessary migrations that include adding this column to your database.
+
+- **Manually Alter the Table**: If for some reason the migration might not have been applied or your workflow requires manual updates, you might need to manually add the column using a SQL command like:
+  ```sql
+  ALTER TABLE cv_submissions ADD COLUMN revision INTEGER DEFAULT 0;
+  ```
+  Be sure to set the appropriate type and default value for your application needs.
+
+- **Check Application Code**: Make sure that the application logic correctly references the `revision` field where used, and there aren’t any logical errors following this schema change.
+
+### 3. Docker Configuration
+
+Both containers for the backend and the CV PDF Service appear to be running properly, but you should:
+
+- **Verify Networking and Links**: Ensure that both containers are in the same network if they need to communicate with each other directly. Use Docker Compose networking configurations if they are part of a Compose file.
+
+- **Ports Configuration**: Based on the port mappings, ensure that requests are made to the correct ports from external clients and internal services. 
+
+### General Recommendations:
+
+- **Logs Monitoring**: Continuously monitor the logs after making changes for any emerging errors or messages, indicating whether the issue resolves or persists.
+
+- **Service Health Checks**: Implement or check existing health checks to ensure your services are running as expected post adjustment.
+
+By following these steps, you should be able to identify and potentially resolve the issues impacting your production server's endpoint responsiveness.

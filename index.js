@@ -11,9 +11,9 @@ const CHEAP_MODEL = process.env.CHEAP_MODEL || 'gpt-4o-mini';
 const EXPENSIVE_MODEL = process.env.EXPENSIVE_MODEL || 'gpt-4o';
 
 // Cost estimates (per 1M tokens)
-const CHEAP_INPUT_COST = parseFloat(process.env.CHEAP_MODEL_INPUT_COST_PER_1M) || 0.25;
-const CHEAP_OUTPUT_COST = parseFloat(process.env.CHEAP_MODEL_OUTPUT_COST_PER_1M) || 2.00;
-const EXPENSIVE_INPUT_COST = parseFloat(process.env.EXPENSIVE_MODEL_INPUT_COST_PER_1M) || 1.25;
+const CHEAP_INPUT_COST = parseFloat(process.env.CHEAP_MODEL_INPUT_COST_PER_1M) || 0.15;
+const CHEAP_OUTPUT_COST = parseFloat(process.env.CHEAP_MODEL_OUTPUT_COST_PER_1M) || 0.60;
+const EXPENSIVE_INPUT_COST = parseFloat(process.env.EXPENSIVE_MODEL_INPUT_COST_PER_1M) || 2.50;
 const EXPENSIVE_OUTPUT_COST = parseFloat(process.env.EXPENSIVE_MODEL_OUTPUT_COST_PER_1M) || 10.00;
 
 if (!OPENAI_API_KEY) {
@@ -25,7 +25,6 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 /**
  * Roughly estimate the number of tokens in a text.
- * tokens ≈ Math.ceil(text.length / 4)
  */
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
@@ -39,47 +38,46 @@ function calculateCost(inputTokens, outputTokens, inputCostPer1M, outputCostPer1
 }
 
 /**
- * Use the cheap model to compress the prompt.
+ * Use the cheap model to compress the prompt or summarize the conversation.
  */
-async function compressPrompt(prompt) {
-  const compressionSystemPrompt = `You are a prompt compression engine.
-
+async function processInput(text, isConversation) {
+  const systemPrompt = isConversation 
+    ? `You are a conversation summarizer. 
+Summarize the following conversation history into a concise "Context Bootstrap" prompt.
+The goal is for a user to paste this summary into a NEW session so the AI knows exactly:
+- The current problem being solved.
+- The technical environment and constraints.
+- What has already been tried or verified.
+- The exact next steps or pending questions.
+Maintain all critical technical details (DNs, paths, commands, IP addresses, error messages).
+Return only the summary.`
+    : `You are a prompt compression engine.
 Compress the user's prompt while preserving:
 - main task
 - critical constraints
 - required context
-- exact technical details
-- names, paths, commands, versions, dates, URLs, numbers
+- exact technical details (names, paths, commands, versions, URLs)
 - required output format
-
-Remove:
-- repetition
-- filler
-- unnecessary politeness
-- redundant role instructions
-- duplicated constraints
-- verbose explanations
-
-Return only the compressed prompt.`;
+Remove repetition, filler, and verbosity. Return only the compressed prompt.`;
 
   try {
     const response = await openai.chat.completions.create({
       model: CHEAP_MODEL,
       messages: [
-        { role: 'system', content: compressionSystemPrompt },
-        { role: 'user', content: `Original prompt:\n${prompt}` }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `${isConversation ? 'Conversation History' : 'Original Prompt'}:\n${text}` }
       ],
       temperature: 0,
     });
 
-    const compressedPrompt = response.choices[0].message.content.trim();
+    const processedText = response.choices[0].message.content.trim();
     const inputTokens = response.usage.prompt_tokens;
     const outputTokens = response.usage.completion_tokens;
     const cost = calculateCost(inputTokens, outputTokens, CHEAP_INPUT_COST, CHEAP_OUTPUT_COST);
 
-    return { compressedPrompt, cost, inputTokens, outputTokens };
+    return { processedText, cost, inputTokens, outputTokens };
   } catch (error) {
-    console.error('Compression failed:', error.message);
+    console.error('Processing failed:', error.message);
     return null;
   }
 }
@@ -107,96 +105,91 @@ async function runMainTask(prompt) {
 }
 
 async function main() {
-  const inputPath = path.join(process.cwd(), 'prompt examples', 'prompt example.txt');
-  const outputDir = path.join(process.cwd(), 'output');
+  const baseInputDir = path.join(process.cwd(), 'prompt examples');
+  const baseOutputDir = path.join(process.cwd(), 'output');
 
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
-  }
+  const categories = [
+    { name: 'prompts', isConversation: false },
+    { name: 'convos', isConversation: true }
+  ];
 
-  if (!fs.existsSync(inputPath)) {
-    console.error(`Error: Input file not found at ${inputPath}`);
-    process.exit(1);
-  }
+  console.log(`--- Prompt Compression & Conversation Summarization POC ---`);
 
-  console.log(`Reading prompt from: ${inputPath}`);
-  const samplePrompt = fs.readFileSync(inputPath, 'utf8');
+  for (const category of categories) {
+    const inputDir = path.join(baseInputDir, category.name);
+    const outputDir = path.join(baseOutputDir, category.name);
 
-  const originalTokens = estimateTokens(samplePrompt);
-  console.log('\n--- Prompt Compression POC ---');
-  console.log(`Original estimated tokens: ${originalTokens}`);
+    if (!fs.existsSync(inputDir)) continue;
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  let finalPrompt = samplePrompt;
-  let compressionUsed = false;
-  let pipelineCost = 0;
-  let compressionStats = null;
+    const files = fs.readdirSync(inputDir).filter(f => f.endsWith('.txt'));
+    if (files.length === 0) continue;
 
-  if (originalTokens >= 800) {
-    console.log('Prompt length >= 800 tokens. Attempting compression...');
-    compressionStats = await compressPrompt(samplePrompt);
+    console.log(`\nProcessing Category: ${category.name.toUpperCase()}`);
+    console.log(`Found ${files.length} files.\n`);
 
-    if (compressionStats) {
-      const compressedTokens = estimateTokens(compressionStats.compressedPrompt);
-      const ratio = compressedTokens / originalTokens;
+    for (const file of files) {
+      const inputPath = path.join(inputDir, file);
+      const content = fs.readFileSync(inputPath, 'utf8');
+      
+      console.log(`File: ${file}`);
+      
+      const originalTokens = estimateTokens(content);
+      console.log(`Original estimated tokens: ${originalTokens}`);
 
-      console.log(`Compressed estimated tokens: ${compressedTokens}`);
-      console.log(`Compression ratio: ${(ratio * 100).toFixed(2)}%`);
+      let finalPrompt = content;
+      let pipelineCost = 0;
+      let compressionUsed = false;
 
-      if (ratio <= 0.75) {
-        console.log('Compression successful (<= 75%). Using compressed prompt.');
-        finalPrompt = compressionStats.compressedPrompt;
-        compressionUsed = true;
-        pipelineCost += compressionStats.cost;
+      if (originalTokens >= 800) {
+        console.log(`Triggering optimization...`);
+        const stats = await processInput(content, category.isConversation);
+
+        if (stats) {
+          const processedTokens = estimateTokens(stats.processedText);
+          const ratio = processedTokens / originalTokens;
+
+          console.log(`Optimized estimated tokens: ${processedTokens} (Ratio: ${(ratio * 100).toFixed(2)}%)`);
+
+          if (ratio <= 0.75) {
+            console.log(`Optimization successful. Using optimized version.`);
+            finalPrompt = stats.processedText;
+            compressionUsed = true;
+            pipelineCost += stats.cost;
+          } else {
+            console.log(`Ratio > 75%. Keeping original.`);
+          }
+        }
       } else {
-        console.log('Compression ratio > 75%. Discarding compressed prompt to maintain context quality.');
+        console.log(`File is small. Skipping optimization.`);
+      }
+
+      // Save results
+      const baseName = path.basename(file, '.txt').replace(/\s+/g, '_');
+      fs.writeFileSync(path.join(outputDir, `before_${baseName}.txt`), content);
+      
+      if (compressionUsed) {
+        fs.writeFileSync(path.join(outputDir, `after_${baseName}.txt`), finalPrompt);
+      }
+
+      console.log(`Running final verification with expensive model...`);
+      const mainTaskResult = await runMainTask(finalPrompt);
+
+      if (mainTaskResult) {
+        pipelineCost += mainTaskResult.cost;
+        fs.writeFileSync(path.join(outputDir, `answer_${baseName}.txt`), mainTaskResult.answer);
+        
+        const originalInputCost = calculateCost(originalTokens, mainTaskResult.outputTokens, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST);
+        const savings = originalInputCost - pipelineCost;
+        
+        console.log(`Savings for ${file}: $${savings.toFixed(6)} (${((savings / originalInputCost) * 100).toFixed(2)}%)\n`);
       }
     }
-  } else {
-    console.log('Prompt is short (< 800 tokens). Skipping compression.');
   }
 
-  // Save prompts to files for inspection
-  const originalOutputPath = path.join(outputDir, 'before_original_prompt.txt');
-  const compressedOutputPath = path.join(outputDir, 'after_compressed_prompt.txt');
-
-  fs.writeFileSync(originalOutputPath, samplePrompt);
-  console.log(`\nOriginal prompt saved to: ${originalOutputPath}`);
-
-  if (compressionUsed) {
-    fs.writeFileSync(compressedOutputPath, finalPrompt);
-    console.log(`Compressed prompt saved to: ${compressedOutputPath}`);
-  } else {
-    console.log('Compression was not used or failed; after_compressed_prompt.txt not created.');
-  }
-
-  console.log('\nRunning main task with expensive model...');
-  const mainTaskResult = await runMainTask(finalPrompt);
-
-  if (!mainTaskResult) {
-    console.error('Failed to get a response from the expensive model.');
-    return;
-  }
-
-  pipelineCost += mainTaskResult.cost;
-
-  // Estimate cost if we had used the original prompt (assuming same output length)
-  const originalInputCost = calculateCost(originalTokens, mainTaskResult.outputTokens, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST);
-  const savings = originalInputCost - pipelineCost;
-
-  console.log('\n--- Final Stats ---');
-  console.log(`Compression Used: ${compressionUsed ? 'YES' : 'NO'}`);
-  console.log(`Original Expensive Model Cost (Est): $${originalInputCost.toFixed(6)}`);
-  console.log(`Actual Pipeline Cost: $${pipelineCost.toFixed(6)}`);
-  console.log(`Estimated Savings: $${savings.toFixed(6)} (${((savings / originalInputCost) * 100).toFixed(2)}%)`);
-
-  console.log('\n--- Final Answer ---');
-  console.log(mainTaskResult.answer);
-
-  // Save the answer too
-  const answerOutputPath = path.join(outputDir, 'final_answer.txt');
-  fs.writeFileSync(answerOutputPath, mainTaskResult.answer);
-  console.log(`\nFinal answer saved to: ${answerOutputPath}`);
+  console.log(`\nAll files processed. Check the 'output' directory for results.`);
 }
 
 main();
+
 
