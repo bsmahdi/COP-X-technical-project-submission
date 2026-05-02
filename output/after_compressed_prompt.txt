@@ -1,0 +1,12 @@
+Deployed project on production server; one endpoint not responding. Check logs for issues. 
+
+**Logs:**
+- `docker logs root-cv-pdf-service-1`: Server listening at `http://0.0.0.0:5005`, received POST request to `/render`, response status 200.
+- `docker logs root-backend-1`: CORS error on `05/02/2026, 5:22:43 PM`.
+- PostgreSQL logs show repeated errors: `column cv_submissions.revision does not exist`.
+
+**Containers:**
+- `root-backend-1`: Up 47 hours, ports 5001->5000.
+- `root-cv-pdf-service-1`: Up 11 days, port 5005.
+
+Identify why the endpoint is unresponsive.

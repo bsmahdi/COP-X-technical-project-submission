@@ -1,0 +1,169 @@
+I deployed the porject on the production server but it seems to not answer on one of the endpoints , why is that ? be concise 
+
+*** System restart required ***
+Last login: Tue Apr 21 14:07:01 2026 from 102.156.105.68
+root@backend:~# docker logs root-cv-pdf-service-1
+{"level":30,"time":1776796233661,"pid":1,"hostname":"5545dbf56ac1","msg":"Server listening at http://0.0.0.0:5005"}
+CV PDF Service listening on port 5005
+{"level":30,"time":1776800272855,"pid":1,"hostname":"5545dbf56ac1","reqId":"req-1","req":{"method":"POST","url":"/render","hostname":"cv-pdf-service:5005","remoteAddress":"172.19.0.8","remotePort":44762},"msg":"incoming request"}
+{"level":30,"time":1776800289932,"pid":1,"hostname":"5545dbf56ac1","reqId":"req-1","res":{"statusCode":200},"responseTime":17076.1131401062,"msg":"request completed"}
+root@backend:~# docker logs root-backend-1
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [NestFactory] Starting Nest application...
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] AppModule dependencies initialized +157ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] MailerModule dependencies initialized +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] PassportModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] ConfigHostModule dependencies initialized +5ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] PrometheusModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] ConfigModule dependencies initialized +26ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] ConfigModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] PrismaModule dependencies initialized +8ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] JwtModule dependencies initialized +4ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] UploadModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] MailModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] MailerCoreModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] ContactModule dependencies initialized +6ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] AdminModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] UsersModule dependencies initialized +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] CertificationsModule dependencies initialized +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] EventsModule dependencies initialized +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] ProjectsModule dependencies initialized +2ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] CvModule dependencies initialized +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [InstanceLoader] AuthModule dependencies initialized +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] CvController {/cv}: +41ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/cv/submit-cv, POST} route +11ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] AdminCvController {/admin/cv-submissions}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id, GET} route +3ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id/generate, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id/send-outbox, POST} route +9ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id, DELETE} route +2ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] AdminFileController {/admin/generated-resumes}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/generated-resumes/:resumeId/outbox, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/generated-resumes/:id/file, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] AdminCvTemplateController {/admin/cv-templates}: +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates/:id/thumbnail, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates/:id/sample-preview, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates/:id/default, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates/:id/preview, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-templates/:id, DELETE} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] UsersController {/users}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/users/profile, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/users/profile, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/users/username, PATCH} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] AuthController {/auth}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/register, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/verify-email, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/login, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/forgot-password, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/reset-password, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/me, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/admin/login, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/admin/me, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/logout, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/auth/admin/logout, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] AdminController {/admin}: +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/dashboard-stats, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/recent-users, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/users, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/users/:id, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/users/:id, DELETE} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/recent-messages, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/admin/cv-submissions/:id/status, PATCH} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] CertificationsController {/certifications}: +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/my-enrollments, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/:id/enrollments, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/:id, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/:id/enroll, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/:id, PUT} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/certifications/:id, DELETE} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] EventsController {/events}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events/:id, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events/:id/enroll, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events/:id, PUT} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/events/:id, DELETE} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] ProjectsController {/projects}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/my-enrollments, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:id/enrollments, GET} route +2ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:projectId/enrollments/:enrollmentId/cv, GET} route +7ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:projectId/enrollments/:enrollmentId/accept, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:projectId/enrollments/:enrollmentId/reject, PATCH} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:id, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:id/enroll, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:id, PUT} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/projects/:id, DELETE} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] UploadController {/upload}: +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/upload, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/upload/profile, POST} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] PrometheusController {/metrics}: +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/metrics, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RoutesResolver] ContactController {/contact}: +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/contact/send-business-contact-message, POST} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/contact/business-messages, GET} route +1ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/contact/business-messages/subject, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/contact/business-messages/not-read, GET} route +0ms
+[Nest] 1  - 04/30/2026, 11:13:30 PM     LOG [RouterExplorer] Mapped {/contact/business-messages/id/:id, PUT} route +1ms
+--- Checking for predefined templates to seed ---
+[Nest] 1  - 04/30/2026, 11:13:31 PM     LOG [NestApplication] Nest application successfully started +775ms
+[Nest] 1  - 05/02/2026, 5:22:43 PM   ERROR [ExceptionsHandler] Error: Not allowed by CORS
+    at origin (/app/dist/main.js:27:26)
+    at /app/node_modules/cors/lib/index.js:219:13
+    at optionsCallback (/app/node_modules/cors/lib/index.js:199:9)
+    at corsMiddleware (/app/node_modules/cors/lib/index.js:204:7)
+    at Layer.handleRequest (/app/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/app/node_modules/router/index.js:342:13)
+    at /app/node_modules/router/index.js:297:9
+    at processParams (/app/node_modules/router/index.js:582:12)
+    at next (/app/node_modules/router/index.js:291:5)
+    at /app/node_modules/@nestjs/platform-express/adapters/express-adapter.js:34:17
+root@backend:~# docker l^Cs root-backend-1
+root@backend:~# docker ps
+CONTAINER ID   IMAGE                                                            COMMAND                  CREATED        STATUS        PORTS                                                   NAMES
+2d0ee5ed5fef   ghcr.io/warrini-platform/warrini-backend-backend:master          "docker-entrypoint.s…"   47 hours ago   Up 47 hours   3000/tcp, 0.0.0.0:5001->5000/tcp, [::]:5001->5000/tcp   root-backend-1
+5545dbf56ac1   ghcr.io/warrini-platform/warrini-backend-cv-pdf-service:master   "docker-entrypoint.s…"   11 days ago    Up 11 days    5005/tcp                                                root-cv-pdf-service-1
+da38f19080bc   prometheuscommunity/postgres-exporter                            "/bin/postgres_expor…"   13 days ago    Up 13 days    9187/tcp                                                root-postgres-exporter-1
+efa598a03a9c   grafana/grafana:latest                                           "/run.sh"                13 days ago    Up 5 days     0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp             root-grafana-1
+cab3ed0dfc7b   grafana/promtail:latest                                          "/usr/bin/promtail -…"   13 days ago    Up 13 days                                                            root-promtail-1
+dac3435899ee   prom/node-exporter:latest                                        "/bin/node_exporter …"   13 days ago    Up 13 days    9100/tcp                                                root-node-exporter-1
+93dfd68e87c4   prom/prometheus:latest                                           "/bin/prometheus --c…"   13 days ago    Up 13 days    9090/tcp                                                root-prometheus-1
+2f6af0fecef5   postgres:15-alpine                                               "docker-entrypoint.s…"   13 days ago    Up 13 days    5432/tcp                                                root-postgres-1
+c6ab150b15be   grafana/loki:latest                                              "/usr/bin/loki -conf…"   13 days ago    Up 13 days    3100/tcp                                                root-loki-1
+root@backend:~# docker logs  root-postgres-1
+
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+
+2026-04-19 14:55:38.331 UTC [1] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-04-19 14:55:38.331 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-04-19 14:55:38.331 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-04-19 14:55:38.348 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-04-19 14:55:38.387 UTC [28] LOG:  database system was shut down at 2026-04-19 14:55:25 UTC
+2026-04-19 14:55:38.493 UTC [1] LOG:  database system is ready to accept connections
+2026-04-19 15:00:38.483 UTC [26] LOG:  checkpoint starting: time
+2026-04-19 15:00:39.039 UTC [26] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.511 s, sync=0.016 s, total=0.556 s; sync files=6, longest=0.008 s, average=0.003 s; distance=0 kB, estimate=0 kB
+2026-04-19 15:05:56.401 UTC [106] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:05:56.401 UTC [106] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:05:57.514 UTC [103] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:05:57.514 UTC [103] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:06:32.837 UTC [113] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:06:32.837 UTC [113] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:06:34.047 UTC [115] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:06:34.047 UTC [115] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:06:49.684 UTC [118] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:06:49.684 UTC [118] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:06:50.834 UTC [120] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:06:50.834 UTC [120] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:07:11.023 UTC [123] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:07:11.023 UTC [123] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:07:12.135 UTC [124] ERROR:  column cv_submissions.revision does not exist at character 148
+2026-04-19 15:07:12.135 UTC [124] STATEMENT:  SELECT "public"."cv_submissions"."id", "public"."cv_submissions"."userId", "public"."cv_submissions"."cvData", "public"."cv_submissions"."status", "public"."cv_submissions"."revision", "public"."cv_submissions"."submittedAt", "public"."cv_submissions"."processedAt" FROM "public"."cv_submissions" WHERE 1=1 ORDER BY "public"."cv_submissions"."submittedAt" DESC OFFSET $1
+2026-04-19 15:10:25.279 UTC [150] ERROR:  column cv_submissions.revision does not exist at character 148
