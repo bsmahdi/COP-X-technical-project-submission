@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
+  "bin": {
+    "cop-x": "./cli.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test-batch": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +23,10 @@
   "homepage": "https://github.com/bsmahdi/COP-X-technical-project-submission#readme",
   "description": "",
   "dependencies": {
+    "commander": "^14.0.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "openai": "^6.35.0"
   }
 }

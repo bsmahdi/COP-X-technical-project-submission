@@ -1,58 +1,62 @@
-# Prompt Compression Proof of Concept
+# COP-X: AI Prompt Optimizer
 
-This Node.js application demonstrates how to use a cheaper LLM to compress long prompts before sending them to a more expensive, high-quality model. This can significantly reduce costs while maintaining the quality of the final output.
+A modular proof-of-concept for **Prompt Compression** and **Conversation Summarization** to reduce LLM costs while preserving technical fidelity.
 
-## Features
-
-- **Prompt Compression**: Automatically uses a cheap model (e.g., `gpt-4o-mini`) to summarize and streamline long user prompts.
-- **Cost Estimation**: Calculates and compares the cost of running the original prompt vs. the compressed pipeline.
-- **Smart Skipping**: Skips compression for short prompts (below 800 estimated tokens) or if the compression ratio is not significant (above 75%).
-- **Terminal Statistics**: Provides clear metrics on token counts, compression ratio, and estimated savings.
-
-## Prerequisites
-
-- Node.js (v18 or higher recommended)
-- OpenAI API Key
+## Architecture
+- **Core Library (`lib.js`)**: Powers all optimization logic.
+- **CLI Tool (`cli.js`)**: For local file processing and pipe-based workflows.
+- **Web UI (`server.js` + `public/`)**: A modern web interface for manual optimization.
 
 ## Setup
 
-1. Clone the repository or copy the files.
-2. Install dependencies:
+1. **Install Dependencies**:
    ```bash
    npm install
    ```
-3. Configure your environment:
-   Create a `.env` file in the root directory (you can use `.env.example` as a template):
+
+2. **Configure Environment**:
+   Create a `.env` file (see `.env.example`):
    ```env
-   OPENAI_API_KEY=your_actual_api_key_here
-   CHEAP_MODEL=gpt-4o-mini
-   EXPENSIVE_MODEL=gpt-4o
+   OPENAI_API_KEY=your_key_here
    ```
 
 ## Usage
 
-Run the script using:
+### 1. Web Interface (Recommended)
+Launch the interactive dashboard:
 ```bash
-node index.js
+npm start
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 2. CLI Tool
+You can process files or text directly from the terminal.
+
+**Shorten a prompt**:
+```bash
+node cli.js shorten "./prompt examples/prompts/prompt example.txt"
 ```
 
-The script will:
-1. Load a long sample prompt.
-2. Estimate the token count.
-3. Attempt to compress the prompt using the cheap model.
-4. Execute the final task using the expensive model with the (possibly compressed) prompt.
-5. Print the results and savings to the terminal.
+**Summarize a conversation**:
+```bash
+node cli.js summarize "./prompt examples/convos/convo example.txt"
+```
 
-## Configuration
+**Advanced CLI Flags**:
+- `-o, --output <path>`: Save result to a file.
+- `-v, --verify`: Run the expensive model (GPT-4o) to see the final answer.
+- `-s, --silent`: Output only the result text (great for scripts).
 
-You can customize the models and their associated costs in the `.env` file. If costs are not provided, the application uses default estimates.
+### 3. Batch Testing
+Process all files in the `prompt examples/` directory:
+```bash
+npm run test-batch
+```
 
-Costs are defined as "per 1 million tokens":
-- `CHEAP_MODEL_INPUT_COST_PER_1M`
-- `CHEAP_MODEL_OUTPUT_COST_PER_1M`
-- `EXPENSIVE_MODEL_INPUT_COST_PER_1M`
-- `EXPENSIVE_MODEL_OUTPUT_COST_PER_1M`
+## How it Works
+1. **Shorten**: Uses a "cheap" model (GPT-4o-mini) to strip fluff and compress instructions into technical shorthand.
+2. **Summarize**: Creates a "Context Bootstrap" summary of long chat histories, preserving problem state and next steps.
+3. **Verify**: Optionally runs the optimized input through a "strong" model (GPT-4o) to confirm output quality.
 
-## Token Estimation
-
-Tokens are estimated using a rough heuristic: `tokens ≈ Math.ceil(text.length / 4)`. This provides a quick, local estimation without needing a tokenizer library.
+## Cost Estimation
+The tool calculates savings based on current OpenAI pricing for input and output tokens. Optimization typically yields **50% - 90%** token reduction.
