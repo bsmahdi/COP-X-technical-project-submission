@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsBtn = document.getElementById('settingsBtn');
   const saveSettingsBtn = document.getElementById('saveSettingsBtn');
   const closeBtn = document.getElementById('closeBtn');
+  const successGif = document.getElementById('successGif');
 
   // Elements for values
   const inputWordsEl = document.getElementById('currentInputCount');
@@ -11,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusEl = document.getElementById('statusText');
   const inputCard = document.getElementById('inputCard');
   const contextCard = document.getElementById('contextCard');
+  const savingsContainer = document.getElementById('savingsContainer');
+  const savedTokensEl = document.getElementById('savedTokens');
 
   // Settings Inputs
   const inputYellowInp = document.getElementById('inputYellow');
@@ -28,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentSettings = { ...DEFAULTS };
 
   // 1. Initial Load
-  chrome.storage.local.get(['inputWords', 'contextWords', 'status', 'settings'], (result) => {
+  chrome.storage.local.get(['inputWords', 'contextWords', 'status', 'settings', 'isOptimized', 'savedTokens'], (result) => {
     if (result.settings) {
       currentSettings = { ...DEFAULTS, ...result.settings };
     }
@@ -38,6 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
       result.contextWords || 0,
       result.status || 'ACCESS GRANTED'
     );
+
+    if (result.isOptimized) {
+      optimizeBtn.textContent = '↩️';
+      successGif.classList.add('play');
+      if (result.savedTokens > 0) {
+        savedTokensEl.textContent = result.savedTokens.toLocaleString();
+        savingsContainer.style.display = 'inline-block';
+      }
+    }
   });
 
   // 2. Listen for storage changes
@@ -86,12 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Optimization logic
   const optimizeBtn = document.getElementById('optimizeBtn');
   
-  chrome.storage.local.get(['isOptimized', 'originalPrompt'], (res) => {
-    if (res.isOptimized) {
-      optimizeBtn.textContent = '↩️';
-    }
-  });
-
   optimizeBtn.addEventListener('click', async () => {
     console.log('Optimize button clicked');
     const data = await chrome.storage.local.get(['isOptimized', 'originalPrompt']);
@@ -99,23 +105,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (data.isOptimized) {
       // Revert logic
-      optimizeBtn.classList.add('spinning');
+      optimizeBtn.classList.add('loading');
       const success = await setInputText(data.originalPrompt);
       if (success) {
-        chrome.storage.local.set({ isOptimized: false, originalPrompt: '' });
+        chrome.storage.local.set({ isOptimized: false, originalPrompt: '', savedTokens: 0 });
         optimizeBtn.textContent = '🔄';
+        savingsContainer.style.display = 'none';
+        successGif.classList.remove('play');
       }
-      optimizeBtn.classList.remove('spinning');
+      optimizeBtn.classList.remove('loading');
       return;
     }
 
-    // Optimize logic
-    optimizeBtn.classList.add('spinning');
-    
+    optimizeBtn.classList.add('loading');
     try {
       const text = await getInputText();
       if (!text) {
-        optimizeBtn.classList.remove('spinning');
+        optimizeBtn.classList.remove('loading');
         return;
       }
       
@@ -130,18 +136,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result && result.optimizedText) {
         const success = await setInputText(result.optimizedText);
         if (success) {
+          const saved = (result.originalTokens || 0) - (result.optimizedTokens || 0);
           chrome.storage.local.set({ 
             isOptimized: true, 
-            originalPrompt: text 
+            originalPrompt: text,
+            savedTokens: saved > 0 ? saved : 0
           });
           optimizeBtn.textContent = '↩️';
+          
+          if (saved > 0) {
+            savedTokensEl.textContent = saved.toLocaleString();
+            savingsContainer.style.display = 'inline-block';
+            
+            // Play success animation
+            successGif.classList.remove('play');
+            void successGif.offsetWidth; // Trigger reflow
+            successGif.classList.add('play');
+          }
         }
       }
     } catch (err) {
       console.error('Optimization failed:', err);
       statusEl.textContent = 'SERVER OFFLINE';
     } finally {
-      optimizeBtn.classList.remove('spinning');
+      optimizeBtn.classList.remove('loading');
     }
   });
 
@@ -149,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const newChatBtn = document.getElementById('newChatBtn');
 
   newChatBtn.addEventListener('click', async () => {
-    newChatBtn.classList.add('spinning');
+    newChatBtn.classList.add('loading');
     try {
       const text = await getConvoText();
       if (!text) {
@@ -174,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Summarization failed:', err);
       statusEl.textContent = 'SERVER OFFLINE';
     } finally {
-      newChatBtn.classList.remove('spinning');
+      newChatBtn.classList.remove('loading');
     }
   });
 
@@ -208,21 +226,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateUI(inputWords, contextWords, status) {
+    inputWordsEl.textContent = inputWords.toLocaleString();
+    contextWordsEl.textContent = contextWords.toLocaleString();
+    statusEl.textContent = status;
+
+    applyColorState(inputCard, inputWords, currentSettings.inputYellow, currentSettings.inputRed);
+    applyColorState(contextCard, contextWords, currentSettings.contextYellow, currentSettings.contextRed);
+  }
+
   function updateSettingsInputs(settings) {
     inputYellowInp.value = settings.inputYellow;
     inputRedInp.value = settings.inputRed;
     contextYellowInp.value = settings.contextYellow;
     contextRedInp.value = settings.contextRed;
-  }
-
-  function updateUI(input, context, status) {
-    inputWordsEl.textContent = input.toLocaleString();
-    contextWordsEl.textContent = context.toLocaleString();
-    statusEl.textContent = status;
-
-    // Apply color logic
-    applyColorState(inputCard, input, currentSettings.inputYellow, currentSettings.inputRed);
-    applyColorState(contextCard, context, currentSettings.contextYellow, currentSettings.contextRed);
   }
 
   function applyColorState(element, value, yellowLimit, redLimit) {
