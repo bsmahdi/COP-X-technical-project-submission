@@ -2,7 +2,7 @@
   <img src="docs/assets/logo.png" alt="COP-X logo" width="140" />
 </p>
 
-<h1 align="center">COP-X — Prompt Optimizer</h1>
+<h1 align="center">COP-X — Promptify</h1>
 
 <p align="center">
   Cut LLM token cost by 90 %+ before the expensive call ever happens.<br/>
