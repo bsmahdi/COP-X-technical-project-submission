@@ -2,13 +2,13 @@
   "name": "cop-x-technical-project-submission",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "batch-processor.js",
   "bin": {
     "cop-x": "./cli.js"
   },
   "scripts": {
     "start": "node server.js",
-    "test-batch": "node index.js"
+    "test-batch": "node batch-processor.js"
   },
   "repository": {
     "type": "git",

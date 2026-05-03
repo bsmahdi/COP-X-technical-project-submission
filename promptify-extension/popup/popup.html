@@ -10,13 +10,14 @@
     <header>
       <span class="title">PROMPTIFY V2.4.1</span>
       <div class="header-icons">
-        <span class="icon-btn">⚙️</span>
-        <span class="icon-btn">✕</span>
+        <span id="settingsBtn" class="icon-btn">⚙️</span>
+        <span id="closeBtn" class="icon-btn">✕</span>
       </div>
     </header>
 
-    <main>
-      <div class="card card-white">
+    <!-- MAIN VIEW -->
+    <main id="mainView">
+      <div id="inputCard" class="card card-white">
         <label>CURRENT INPUT</label>
         <div class="value-container">
           <span id="currentInputCount" class="value">0</span>
@@ -24,13 +25,42 @@
         </div>
       </div>
 
-      <div class="card card-orange">
+      <div id="contextCard" class="card card-orange">
         <label>CONTEXT MEMORY</label>
         <div class="value-container">
           <span id="contextMemoryCount" class="value">0</span>
           <span class="unit">WDS</span>
         </div>
       </div>
+    </main>
+
+    <!-- SETTINGS VIEW -->
+    <main id="settingsView" style="display: none;">
+      <div class="settings-group">
+        <h3>INPUT THRESHOLDS</h3>
+        <div class="input-row">
+          <label>Yellow at</label>
+          <input type="number" id="inputYellow" value="501">
+        </div>
+        <div class="input-row">
+          <label>Red at</label>
+          <input type="number" id="inputRed" value="1001">
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>CONTEXT THRESHOLDS</h3>
+        <div class="input-row">
+          <label>Yellow at</label>
+          <input type="number" id="contextYellow" value="5001">
+        </div>
+        <div class="input-row">
+          <label>Red at</label>
+          <input type="number" id="contextRed" value="30001">
+        </div>
+      </div>
+
+      <button id="saveSettingsBtn" class="primary-btn">SAVE & BACK</button>
     </main>
 
     <footer>
