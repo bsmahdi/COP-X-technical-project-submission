@@ -83,6 +83,49 @@ document.addEventListener('DOMContentLoaded', () => {
     window.close();
   });
 
+  const newChatBtn = document.getElementById('newChatBtn');
+  newChatBtn.addEventListener('click', async () => {
+    newChatBtn.disabled = true;
+    newChatBtn.innerText = 'WAIT...';
+
+    chrome.storage.local.get(['fullConvoText'], async (result) => {
+      const text = result.fullConvoText;
+      if (!text || text.trim().length < 50) {
+        newChatBtn.innerText = 'NO CONVO';
+        setTimeout(() => {
+          newChatBtn.disabled = false;
+          newChatBtn.innerText = 'START NEW CHAT';
+        }, 2000);
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const data = await response.json();
+
+        if (data.summaryText) {
+          const baseUrl = 'https://chatgpt.com/?q=';
+          const query = encodeURIComponent(data.summaryText);
+          window.open(baseUrl + query, '_blank');
+        } else {
+          newChatBtn.innerText = 'ERROR';
+        }
+      } catch (err) {
+        console.error('Summarize Error:', err);
+        newChatBtn.innerText = 'OFFLINE';
+      } finally {
+        setTimeout(() => {
+          newChatBtn.disabled = false;
+          newChatBtn.innerText = 'START NEW CHAT';
+        }, 3000);
+      }
+    });
+  });
+
   function updateSettingsInputs(settings) {
     inputYellowInp.value = settings.inputYellow;
     inputRedInp.value = settings.inputRed;
