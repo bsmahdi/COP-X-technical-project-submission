@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="title">PROMPTIFY V2.4.1</span>
+      <div class="header-icons">
+        <span class="icon-btn">⚙️</span>
+        <span class="icon-btn">✕</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="card card-white">
+        <label>CURRENT INPUT</label>
+        <div class="value-container">
+          <span id="currentInputCount" class="value">0</span>
+          <span class="unit">WDS</span>
+        </div>
+      </div>
+
+      <div class="card card-orange">
+        <label>CONTEXT MEMORY</label>
+        <div class="value-container">
+          <span id="contextMemoryCount" class="value">0</span>
+          <span class="unit">WDS</span>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="status-indicator">
+        <span class="dot"></span>
+        <span id="statusText">ACCESS GRANTED</span>
+      </div>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
