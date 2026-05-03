@@ -1,28 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Mono:wght@700&display=swap');
+/* Design System */
+:root {
+  --bg: #ffffff;
+  --text: #1a1310;
+  --accent: #ff4b3e;
+  --white: #ffffff;
+  --yellow: #f9eb42;
+  --red: #ff4b3e;
+}
 
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
   width: 320px;
-  font-family: 'Inter', sans-serif;
-  background-color: #f7f7f7;
-  color: #1a1310;
+  overflow: hidden;
 }
 
 .container {
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
 header {
-  background-color: #1a1310;
-  color: #ffffff;
-  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 700;
+  background: #1a1310;
+  color: white;
+  padding: 12px 16px;
+  margin: -16px -16px 0 -16px;
+}
+
+.title {
   font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
 .header-icons {
@@ -33,13 +53,11 @@ header {
 .icon-btn {
   cursor: pointer;
   font-size: 16px;
+  transition: transform 0.1s;
 }
 
-main {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.icon-btn:hover {
+  transform: scale(1.2);
 }
 
 .card {
@@ -48,7 +66,7 @@ main {
   border: 2px solid #1a1310;
   padding: 16px;
   box-shadow: 4px 4px 0px #1a1310;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
   transition: background-color 0.3s;
   display: flex;
   flex-direction: column;
@@ -85,7 +103,6 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
 }
 
 .card label {
@@ -95,39 +112,34 @@ main {
 }
 
 .action-btn {
-  background: #1a1310;
-  border: 2px solid #1a1310;
-  color: white;
+  background: transparent;
+  border: none;
+  color: #1a1310;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 2px 2px 0px #1a1310;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  transition: all 0.1s;
+  box-shadow: none;
+  border-radius: 0;
+  font-size: 24px;
+  line-height: 1;
 }
 
 .action-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #1a1310;
+  transform: scale(1.1);
 }
 
 .action-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 0px 0px 0px #1a1310;
+  transform: scale(0.95);
 }
 
-.action-btn.spinning {
-  animation: spin 1s linear infinite;
+.action-btn.loading {
+  opacity: 0.3;
   pointer-events: none;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 .value-container {
@@ -137,120 +149,122 @@ main {
 }
 
 .value {
-  font-family: 'Space Mono', monospace;
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 900;
+  font-family: 'Outfit', sans-serif;
 }
 
 .unit {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
-  opacity: 0.8;
+  color: #1a1310;
+  opacity: 0.6;
 }
 
-.card-white {
-  background-color: #ffffff;
+.savings-badge {
+  background: #27ae60;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: inline-block;
+  box-shadow: 2px 2px 0px #1a1310;
+  border: 1px solid #1a1310;
 }
 
-.card-orange {
-  background-color: #f15a24;
+.savings-badge span {
+  font-size: 13px;
 }
 
-/* STATE COLORS */
-.state-white {
-  background-color: #ffffff !important;
-  color: #1a1310 !important;
-}
+/* Card States */
+.state-white { background-color: var(--white); }
+.state-yellow { background-color: var(--yellow); }
+.state-red { background-color: var(--red); color: white; }
+.state-red .unit { color: white; }
+.state-red .card label { color: white; }
+.state-red .action-btn { color: white; }
 
-.state-yellow {
-  background-color: #ffeb3b !important;
-  color: #1a1310 !important;
-}
-
-.state-red {
-  background-color: #f44336 !important;
-  color: #ffffff !important;
-}
-
-/* SETTINGS VIEW STYLES */
+/* Settings */
 .settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .settings-group h3 {
-  font-size: 11px;
-  margin-bottom: 12px;
-  opacity: 0.6;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1a1310;
+  text-transform: uppercase;
 }
 
 .input-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
 }
 
 .input-row label {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 500;
 }
 
-.input-row input {
+input[type="number"] {
   width: 80px;
-  padding: 4px 8px;
+  padding: 6px;
   border: 2px solid #1a1310;
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
   font-weight: 700;
+  outline: none;
 }
 
 .primary-btn {
   width: 100%;
-  padding: 12px;
-  background-color: #1a1310;
-  color: #fff;
+  background: #1a1310;
+  color: white;
   border: none;
-  font-weight: 700;
+  padding: 12px;
+  font-weight: 800;
   cursor: pointer;
-  margin-top: 10px;
-  box-shadow: 4px 4px 0px #f15a24;
+  box-shadow: 4px 4px 0px #ff4b3e;
+  transition: all 0.1s;
 }
 
 .primary-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0px #f15a24;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #ff4b3e;
 }
 
 .primary-btn:active {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #f15a24;
+  box-shadow: 0px 0px 0px #ff4b3e;
 }
 
 footer {
-  border-top: 1px solid #ddd;
-  padding: 12px 16px;
-  background-color: #ffffff;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  margin-top: 8px;
 }
 
 .status-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
 }
 
 .dot {
   width: 8px;
   height: 8px;
+  background: #27ae60;
   border-radius: 50%;
-  border: 1.5px solid #1a1310;
 }
 
 #statusText {
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
+  color: #1a1310;
 }

@@ -1,62 +1,196 @@
-# COP-X: AI Prompt Optimizer
+<p align="center">
+  <img src="assets/logo.png" alt="COP-X logo" width="140" />
+</p>
 
-A modular proof-of-concept for **Prompt Compression** and **Conversation Summarization** to reduce LLM costs while preserving technical fidelity.
+<h1 align="center">COP-X — Prompt Optimizer</h1>
 
-## Architecture
-- **Core Library (`lib.js`)**: Powers all optimization logic.
-- **CLI Tool (`cli.js`)**: For local file processing and pipe-based workflows.
-- **Web UI (`server.js` + `public/`)**: A modern web interface for manual optimization.
+<p align="center">
+  Cut LLM token cost by 90 %+ before the expensive call ever happens.<br/>
+  CLI · Web dashboard · Chrome extension — all backed by one core library.
+</p>
 
-## Setup
+---
 
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+## Team — Green Lantern
 
-2. **Configure Environment**:
-   Create a `.env` file (see `.env.example`):
-   ```env
-   OPENAI_API_KEY=your_key_here
-   ```
+- **Mahdi Ben Slima**
+- **Zied Koubaa**
+- **Amine Mseddi**
+- **Hedi Moalla**
 
-## Usage
+---
 
-### 1. Web Interface (Recommended)
-Launch the interactive dashboard:
-```bash
-npm start
+## What this is
+
+LLMs are billed per token. In real use, two patterns waste most of that
+budget: oversized one-shot prompts (a question buried in a wall of logs),
+and long-running conversations that replay the whole history on every turn.
+
+COP-X runs a cheap preprocessing model before the expensive call, so the
+strong model only ever sees the *useful* part of the input. Two functions
+expose this:
+
+- **`shorten`** — compress a single verbose prompt into terse technical
+  shorthand that produces the same answer.
+- **`summarize`** — turn a long chat transcript into a structured
+  *Bootstrap Summary* that lets you continue the conversation in a fresh
+  chat without paying to replay history.
+
+On the reference inputs in this repo, `shorten` removes **97.4 %** of the
+tokens (5,144 → 132) and `summarize` removes **92.2 %** (4,768 → 370). Full
+numbers and the underlying input/output files live in
+[`prompt examples/`](./prompt%20examples) and [`output/`](./output).
+
+→ Read more: [Problem statement](docs/PROBLEM.md) ·
+[Technical abstract](docs/ABSTRACT.md) ·
+[Use cases](docs/USE_CASES.md)
+
+---
+
+## Architecture in one diagram
+
+```mermaid
+flowchart LR
+    CLI[CLI<br/>cli.js]
+    WEB[Web UI<br/>public/index.html]
+    EXT[Chrome Extension<br/>promptify-extension/]
+    SERVER[Express server<br/>server.js]
+    LIB[Core library<br/>lib.js]
+    OPENAI[(OpenAI API)]
+
+    CLI -->|imports| LIB
+    WEB -->|HTTP /api/*| SERVER
+    EXT -->|HTTP /api/*| SERVER
+    SERVER -->|imports| LIB
+    LIB -->|HTTPS| OPENAI
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 2. CLI Tool
-You can process files or text directly from the terminal.
+→ Detailed walkthrough: [Architecture](docs/ARCHITECTURE.md)
 
-**Shorten a prompt**:
+---
+
+## Three ways to use it
+
+### 🖥️ CLI
+
+Scriptable, file-based, pipeable.
+
 ```bash
-node cli.js shorten "./prompt examples/prompts/prompt example.txt"
+$ node cli.js shorten "./prompt examples/prompts/prompt example.txt"
+
+--- Prompt Compression ---
+Original tokens: 5144
+Processing...
+
+Optimized Prompt:
+-----------------
+**Issue:** Endpoint not responding.
+
+**Logs:**
+1. **CV PDF Service**: Listening on `http://0.0.0.0:5005`, request to
+   `/render` responded with `200`.
+2. **Backend Service**: Started successfully, mapped routes.
+3. **CORS Error**: `Not allowed by CORS` at `/app/dist/main.js:27:26`.
+4. **Database Errors**: Multiple
+   `ERROR: column cv_submissions.revision does not exist`.
+-----------------
+Optimized tokens: 132 (2.57%)
+Optimization cost: $0.001162
 ```
 
-**Summarize a conversation**:
+→ [Getting Started — CLI](docs/getting-started/CLI.md)
+
+### 🌐 Web UI
+
+Single-page dashboard. Paste, click, copy.
+
+![Web UI](docs/screenshots/shorten%20prompt.png)
+
+→ [Getting Started — Web UI](docs/getting-started/WEB.md)
+
+### 🧩 Chrome Extension (Promptify)
+
+Inline inside ChatGPT. Live word counts, badge warnings, one-click
+optimize, one-click "continue this in a new chat".
+
+![Chrome extension](docs/screenshots/chrome%20extension%20screenshot.png)
+
+→ [Getting Started — Chrome Extension](docs/getting-started/EXTENSION.md)
+
+---
+
+## Quick setup (the short version)
+
 ```bash
-node cli.js summarize "./prompt examples/convos/convo example.txt"
+# 1. Clone
+git clone https://github.com/bsmahdi/COP-X-technical-project-submission.git
+cd COP-X-technical-project-submission
+
+# 2. Install
+npm install
+
+# 3. Configure
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY=sk-...
+
+# 4. Pick your interface
+node cli.js shorten "./prompt examples/prompts/prompt example.txt"   # CLI
+npm start                                                            # Web UI on :3000
+# Chrome extension: chrome://extensions → Load unpacked → promptify-extension/
 ```
 
-**Advanced CLI Flags**:
-- `-o, --output <path>`: Save result to a file.
-- `-v, --verify`: Run the expensive model (GPT-4o) to see the final answer.
-- `-s, --silent`: Output only the result text (great for scripts).
+Each interface has its own getting-started guide — links above.
 
-### 3. Batch Testing
-Process all files in the `prompt examples/` directory:
-```bash
-npm run test-batch
+---
+
+## Documentation index
+
+| Document | What's in it |
+| --- | --- |
+| [Problem](docs/PROBLEM.md) | Why this project exists |
+| [Technical abstract](docs/ABSTRACT.md) | One-page summary — approach, implementation, results |
+| [Architecture](docs/ARCHITECTURE.md) | Components, request lifecycle, file map, cost model |
+| [Use cases](docs/USE_CASES.md) | When to use `shorten`, when to use `summarize` |
+| [Getting Started — CLI](docs/getting-started/CLI.md) | Install, commands, flags, batch mode |
+| [Getting Started — Web UI](docs/getting-started/WEB.md) | Run the server, walkthrough, API endpoints |
+| [Getting Started — Chrome Extension](docs/getting-started/EXTENSION.md) | Load unpacked, popup features, troubleshooting |
+
+---
+
+## Repository layout
+
+```
+.
+├── lib.js                    # Core: shorten / summarize / verify, cost helpers
+├── server.js                 # Express server, /api/shorten, /api/summarize
+├── cli.js                    # Commander-based CLI
+├── batch-processor.js        # Runs the full pipeline over the example corpus
+├── public/
+│   └── index.html            # Web UI (single page)
+├── promptify-extension/      # Chrome extension (Manifest V3)
+│   ├── manifest.json
+│   ├── background.js         # Service worker — toolbar badge
+│   ├── content/content.js    # ChatGPT content script
+│   └── popup/                # popup.html / popup.css / popup.js
+├── prompt examples/          # Reference inputs
+│   ├── prompts/              # One-shot prompts (for shorten)
+│   └── convos/               # Conversation transcripts (for summarize)
+├── output/                   # Outputs from `npm run test-batch`
+├── docs/                     # All documentation (you are here)
+│   ├── ABSTRACT.md
+│   ├── PROBLEM.md
+│   ├── ARCHITECTURE.md
+│   ├── USE_CASES.md
+│   ├── getting-started/
+│   │   ├── CLI.md
+│   │   ├── WEB.md
+│   │   └── EXTENSION.md
+│   └── screenshots/
+└── assets/                   # Logo
 ```
 
-## How it Works
-1. **Shorten**: Uses a "cheap" model (GPT-4o-mini) to strip fluff and compress instructions into technical shorthand.
-2. **Summarize**: Creates a "Context Bootstrap" summary of long chat histories, preserving problem state and next steps.
-3. **Verify**: Optionally runs the optimized input through a "strong" model (GPT-4o) to confirm output quality.
+---
 
-## Cost Estimation
-The tool calculates savings based on current OpenAI pricing for input and output tokens. Optimization typically yields **50% - 90%** token reduction.
+## License
+
+ISC.
