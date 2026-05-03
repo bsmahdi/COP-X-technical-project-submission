@@ -109,8 +109,8 @@ async function main() {
   const baseOutputDir = path.join(process.cwd(), 'output');
 
   const categories = [
-    { name: 'prompts', isConversation: false },
-    { name: 'convos', isConversation: true }
+    { name: 'prompts', isConversation: false, shouldRunExpensive: true },
+    { name: 'convos', isConversation: true, shouldRunExpensive: false }
   ];
 
   console.log(`--- Prompt Compression & Conversation Summarization POC ---`);
@@ -172,17 +172,21 @@ async function main() {
         fs.writeFileSync(path.join(outputDir, `after_${baseName}.txt`), finalPrompt);
       }
 
-      console.log(`Running final verification with expensive model...`);
-      const mainTaskResult = await runMainTask(finalPrompt);
+      if (category.shouldRunExpensive) {
+        console.log(`Running final verification with expensive model...`);
+        const mainTaskResult = await runMainTask(finalPrompt);
 
-      if (mainTaskResult) {
-        pipelineCost += mainTaskResult.cost;
-        fs.writeFileSync(path.join(outputDir, `answer_${baseName}.txt`), mainTaskResult.answer);
-        
-        const originalInputCost = calculateCost(originalTokens, mainTaskResult.outputTokens, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST);
-        const savings = originalInputCost - pipelineCost;
-        
-        console.log(`Savings for ${file}: $${savings.toFixed(6)} (${((savings / originalInputCost) * 100).toFixed(2)}%)\n`);
+        if (mainTaskResult) {
+          pipelineCost += mainTaskResult.cost;
+          fs.writeFileSync(path.join(outputDir, `answer_${baseName}.txt`), mainTaskResult.answer);
+          
+          const originalInputCost = calculateCost(originalTokens, mainTaskResult.outputTokens, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST);
+          const savings = originalInputCost - pipelineCost;
+          
+          console.log(`Savings for ${file}: $${savings.toFixed(6)} (${((savings / originalInputCost) * 100).toFixed(2)}%)\n`);
+        }
+      } else {
+        console.log(`Skipping expensive model run for ${category.name} category.\n`);
       }
     }
   }

@@ -1,13 +1,1 @@
-The production server's endpoint is unresponsive. Check the following logs for issues:
-
-1. **CV PDF Service**: 
-   - Listening on `http://0.0.0.0:5005`.
-   - Incoming request to `/render` returned status `200`.
-
-2. **Backend Logs**: 
-   - CORS error: `Not allowed by CORS` at `/app/dist/main.js:27:26`.
-
-3. **PostgreSQL Logs**: 
-   - Errors indicating `column cv_submissions.revision does not exist`.
-
-Investigate CORS configuration and database schema for the missing column.
+The production server's endpoint is unresponsive. Check the logs for the `root-backend-1` container for CORS errors and the `cv_submissions` table for missing `revision` column errors. The service is running on `http://0.0.0.0:5005`.
