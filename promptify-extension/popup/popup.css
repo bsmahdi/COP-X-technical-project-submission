@@ -51,10 +51,53 @@ main {
   gap: 8px;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .card label {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+.action-btn {
+  background: #1a1310;
+  border: 2px solid #1a1310;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 0px #1a1310;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.action-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #1a1310;
+}
+
+.action-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px #1a1310;
+}
+
+.action-btn.spinning {
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .value-container {
@@ -180,32 +223,4 @@ footer {
 
 #statusText {
   text-transform: uppercase;
-}
-
-.action-btn {
-  background: #1a1310;
-  color: white;
-  border: 2px solid #1a1310;
-  padding: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 2px 2px 0px #ffffff;
-  margin-top: 4px;
-}
-
-.action-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #ffffff;
-}
-
-.action-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #ffffff;
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

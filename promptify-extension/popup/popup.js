@@ -83,48 +83,87 @@ document.addEventListener('DOMContentLoaded', () => {
     window.close();
   });
 
-  const newChatBtn = document.getElementById('newChatBtn');
-  newChatBtn.addEventListener('click', async () => {
-    newChatBtn.disabled = true;
-    newChatBtn.innerText = 'WAIT...';
+  // Optimization logic
+  const optimizeBtn = document.getElementById('optimizeBtn');
+  
+  chrome.storage.local.get(['isOptimized', 'originalPrompt'], (res) => {
+    if (res.isOptimized) {
+      optimizeBtn.textContent = '↩️';
+    }
+  });
 
-    chrome.storage.local.get(['fullConvoText'], async (result) => {
-      const text = result.fullConvoText;
-      if (!text || text.trim().length < 50) {
-        newChatBtn.innerText = 'NO CONVO';
-        setTimeout(() => {
-          newChatBtn.disabled = false;
-          newChatBtn.innerText = 'START NEW CHAT';
-        }, 2000);
+  optimizeBtn.addEventListener('click', async () => {
+    console.log('Optimize button clicked');
+    const data = await chrome.storage.local.get(['isOptimized', 'originalPrompt']);
+    console.log('Current state:', data);
+    
+    if (data.isOptimized) {
+      // Revert logic
+      optimizeBtn.classList.add('spinning');
+      const success = await setInputText(data.originalPrompt);
+      if (success) {
+        chrome.storage.local.set({ isOptimized: false, originalPrompt: '' });
+        optimizeBtn.textContent = '🔄';
+      }
+      optimizeBtn.classList.remove('spinning');
+      return;
+    }
+
+    // Optimize logic
+    optimizeBtn.classList.add('spinning');
+    
+    try {
+      const text = await getInputText();
+      if (!text) {
+        optimizeBtn.classList.remove('spinning');
         return;
       }
-
-      try {
-        const response = await fetch('http://localhost:3000/api/summarize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text })
-        });
-        const data = await response.json();
-
-        if (data.summaryText) {
-          const baseUrl = 'https://chatgpt.com/?q=';
-          const query = encodeURIComponent(data.summaryText);
-          window.open(baseUrl + query, '_blank');
-        } else {
-          newChatBtn.innerText = 'ERROR';
+      
+      const response = await fetch('http://localhost:3000/api/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      
+      const result = await response.json();
+      console.log('API Result:', result);
+      if (result && result.optimizedText) {
+        const success = await setInputText(result.optimizedText);
+        if (success) {
+          chrome.storage.local.set({ 
+            isOptimized: true, 
+            originalPrompt: text 
+          });
+          optimizeBtn.textContent = '↩️';
         }
-      } catch (err) {
-        console.error('Summarize Error:', err);
-        newChatBtn.innerText = 'OFFLINE';
-      } finally {
-        setTimeout(() => {
-          newChatBtn.disabled = false;
-          newChatBtn.innerText = 'START NEW CHAT';
-        }, 3000);
       }
-    });
+    } catch (err) {
+      console.error('Optimization failed:', err);
+      statusEl.textContent = 'SERVER OFFLINE';
+    } finally {
+      optimizeBtn.classList.remove('spinning');
+    }
   });
+
+  async function getInputText() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return '';
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, { action: 'GET_INPUT' }, (response) => {
+        resolve(response ? response.text : '');
+      });
+    });
+  }
+
+  async function setInputText(text) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return false;
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, { action: 'SET_INPUT', text }, (response) => {
+        resolve(response ? response.success : false);
+      });
+    });
+  }
 
   function updateSettingsInputs(settings) {
     inputYellowInp.value = settings.inputYellow;

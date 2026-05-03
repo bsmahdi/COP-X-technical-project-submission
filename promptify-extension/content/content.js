@@ -14,121 +14,49 @@ const SELECTORS = {
 
 function countWords(text) {
   if (!text) return 0;
+  // Basic word count logic
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-let originalPrompt = '';
-let isShortened = false;
-
-function injectButtons() {
-  const container = document.querySelector('[grid-area="trailing"] .ms-auto') || document.querySelector(SELECTORS.input)?.parentElement;
-  if (!container || document.getElementById('promptify-shorten-btn')) return;
-
-  const btn = document.createElement('button');
-  btn.id = 'promptify-shorten-btn';
-  btn.type = 'button';
-  btn.innerText = 'Shorten';
-  btn.style.cssText = `
-    background: #f15a24;
-    color: white;
-    border: 2px solid #1a1310;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-right: 8px;
-    transition: all 0.2s;
-    box-shadow: 2px 2px 0px #1a1310;
-  `;
-
-  btn.onclick = async () => {
-    const inputEl = document.querySelector(SELECTORS.input);
-    if (!inputEl) return;
-
-    if (isShortened) {
-      // Revert
-      inputEl.value = originalPrompt;
-      inputEl.innerText = originalPrompt; 
-      btn.innerText = 'Shorten';
-      isShortened = false;
-      scrapeData();
-      return;
-    }
-
-    const text = inputEl.value || inputEl.innerText;
-    if (!text || text.trim().length < 10) return;
-
-    originalPrompt = text;
-    btn.innerText = '...';
-    btn.disabled = true;
-
-    try {
-      const response = await fetch('http://localhost:3000/api/shorten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text })
-      });
-      const data = await response.json();
-      
-      if (data.optimizedText) {
-        inputEl.value = data.optimizedText;
-        inputEl.innerText = data.optimizedText;
-        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-        
-        btn.innerText = 'Revert';
-        isShortened = true;
-      } else {
-        btn.innerText = 'Error';
-      }
-    } catch (err) {
-      console.error('Shorten Error:', err);
-      btn.innerText = 'Offline';
-    } finally {
-      btn.disabled = false;
-      scrapeData();
-    }
-  };
-
-  container.prepend(btn);
-}
-
 function scrapeData() {
-  injectButtons(); 
   try {
+    // 1. Scrape Current Input
     const inputEl = document.querySelector(SELECTORS.input);
     let inputText = '';
     if (inputEl) {
-      inputText = inputEl.value || inputEl.innerText || '';
+      // ChatGPT input is usually a div with contenteditable or a textarea
+      inputText = inputEl.innerText || inputEl.value || '';
     }
     const inputWords = countWords(inputText);
 
+    // 2. Scrape Context Memory
+    // We want to count all words in the conversation so far
     const turns = document.querySelectorAll(SELECTORS.turns);
     let contextWords = 0;
-    let fullConvoText = '';
     
     turns.forEach(turn => {
-      const text = turn.innerText;
-      contextWords += countWords(text);
-      fullConvoText += text + '\n\n';
+      // Only count turns that are NOT the one currently being typed (if it's included)
+      // Usually articles are completed messages.
+      contextWords += countWords(turn.innerText);
     });
 
+    // 3. Status Check
     const isChatGPT = window.location.hostname.includes('chatgpt.com');
     const status = isChatGPT ? 'ACCESS GRANTED' : 'NOT ON CHATGPT';
 
+    // 4. Save to storage
     chrome.storage.local.set({
       inputWords,
       contextWords,
-      fullConvoText, 
       status
     });
   } catch (error) {
     console.error('Promptify Scraping Error:', error);
-    chrome.storage.local.set({ status: 'ERROR READING CONTEXT' });
+    chrome.storage.local.set({
+      status: 'ERROR READING CONTEXT'
+    });
   }
 }
-
-// ... existing observer and event listener ...
 
 // Initial Scrape
 scrapeData();
@@ -151,3 +79,27 @@ document.addEventListener('input', (e) => {
     scrapeData();
   }
 }, true);
+// Handle messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'GET_INPUT') {
+    const inputEl = document.querySelector(SELECTORS.input);
+    const text = inputEl ? (inputEl.innerText || inputEl.value || '') : '';
+    sendResponse({ text });
+  } else if (request.action === 'SET_INPUT') {
+    const inputEl = document.querySelector(SELECTORS.input);
+    if (inputEl) {
+      if (inputEl.nodeName === 'TEXTAREA') {
+        inputEl.value = request.text;
+      } else {
+        inputEl.innerText = request.text;
+      }
+      // Trigger events so ChatGPT UI updates
+      inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+      inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false });
+    }
+  }
+  return true;
+});

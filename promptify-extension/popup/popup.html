@@ -18,7 +18,10 @@
     <!-- MAIN VIEW -->
     <main id="mainView">
       <div id="inputCard" class="card card-white">
-        <label>CURRENT INPUT</label>
+        <div class="card-header">
+          <label>CURRENT INPUT</label>
+          <button id="optimizeBtn" class="action-btn" title="Optimize Prompt">🔄</button>
+        </div>
         <div class="value-container">
           <span id="currentInputCount" class="value">0</span>
           <span class="unit">WDS</span>
@@ -31,7 +34,6 @@
           <span id="contextMemoryCount" class="value">0</span>
           <span class="unit">WDS</span>
         </div>
-        <button id="newChatBtn" class="action-btn">START NEW CHAT</button>
       </div>
     </main>
 
