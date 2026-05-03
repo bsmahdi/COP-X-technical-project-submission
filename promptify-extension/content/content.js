@@ -85,6 +85,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const inputEl = document.querySelector(SELECTORS.input);
     const text = inputEl ? (inputEl.innerText || inputEl.value || '') : '';
     sendResponse({ text });
+  } else if (request.action === 'GET_CONVO') {
+    const turns = document.querySelectorAll(SELECTORS.turns);
+    let fullText = '';
+    turns.forEach(turn => {
+      // Add speaker labels for better summarization
+      const isAI = turn.querySelector('.assistant, [data-testid$="-assistant"]') !== null;
+      const speaker = isAI ? 'AI: ' : 'User: ';
+      fullText += `${speaker}${turn.innerText}\n\n`;
+    });
+    sendResponse({ text: fullText.trim() });
   } else if (request.action === 'SET_INPUT') {
     const inputEl = document.querySelector(SELECTORS.input);
     if (inputEl) {
@@ -103,3 +113,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   return true;
 });
+
+// Auto-inject pending summary on load
+async function checkPendingSummary() {
+  const data = await chrome.storage.local.get(['pendingSummary']);
+  if (data.pendingSummary) {
+    let attempts = 0;
+    const maxAttempts = 20; // 10 seconds total
+
+    const timer = setInterval(() => {
+      const inputEl = document.querySelector(SELECTORS.input);
+      if (inputEl) {
+        clearInterval(timer);
+        if (inputEl.nodeName === 'TEXTAREA') {
+          inputEl.value = data.pendingSummary;
+        } else {
+          inputEl.innerText = data.pendingSummary;
+        }
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+        chrome.storage.local.remove(['pendingSummary']);
+        console.log('Promptify: Pending summary injected successfully.');
+      }
+      
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(timer);
+        console.log('Promptify: Failed to find input area for pending summary.');
+      }
+    }, 500);
+  }
+}
+
+checkPendingSummary();

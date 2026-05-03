@@ -145,6 +145,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // New Chat logic
+  const newChatBtn = document.getElementById('newChatBtn');
+
+  newChatBtn.addEventListener('click', async () => {
+    newChatBtn.classList.add('spinning');
+    try {
+      const text = await getConvoText();
+      if (!text) {
+        newChatBtn.classList.remove('spinning');
+        return;
+      }
+
+      const response = await fetch('http://localhost:3000/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      const result = await response.json();
+      if (result && result.summaryText) {
+        // Store for injection in new tab
+        await chrome.storage.local.set({ pendingSummary: result.summaryText });
+        // Open new tab
+        chrome.tabs.create({ url: 'https://chatgpt.com/' });
+      }
+    } catch (err) {
+      console.error('Summarization failed:', err);
+      statusEl.textContent = 'SERVER OFFLINE';
+    } finally {
+      newChatBtn.classList.remove('spinning');
+    }
+  });
+
+  async function getConvoText() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return '';
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, { action: 'GET_CONVO' }, (response) => {
+        resolve(response ? response.text : '');
+      });
+    });
+  }
+
   async function getInputText() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return '';
@@ -187,10 +230,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (value >= redLimit) {
       element.classList.add('state-red');
+      if (element.id === 'contextCard') newChatBtn.style.display = 'flex';
     } else if (value >= yellowLimit) {
       element.classList.add('state-yellow');
+      if (element.id === 'contextCard') newChatBtn.style.display = 'flex';
     } else {
       element.classList.add('state-white');
+      if (element.id === 'contextCard') newChatBtn.style.display = 'none';
     }
   }
 });
