@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import { shorten, summarize, verify, estimateTokens } from './lib.js';
+import { shorten, summarize, verify, estimateTokens } from '../backend/lib.js';
 
 const program = new Command();
 

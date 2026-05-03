@@ -11,13 +11,11 @@ trying things out before scripting them or wiring them into the extension.
 ## Install & run
 
 From the repository root:
-
-```bash
+cd backend
 npm install
 cp .env.example .env
 # edit .env and set OPENAI_API_KEY=sk-...
 npm start
-```
 
 Open <http://localhost:3000> in your browser.
 

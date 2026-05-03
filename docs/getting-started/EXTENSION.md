@@ -18,7 +18,7 @@ replaces your prompt in place when you click *Optimize*.
 1. Open `chrome://extensions` in Chrome.
 2. Toggle **Developer mode** on (top-right).
 3. Click **Load unpacked** and select the
-   [`promptify-extension/`](../../promptify-extension) directory in this
+   [`extension/`](../../extension) directory in this
    repository.
 4. Promptify will appear in the extensions list. Pin it to your toolbar.
 
@@ -88,16 +88,16 @@ persisted in `chrome.storage.local`.
 | --- | --- |
 | Status footer shows `SERVER OFFLINE` | Backend isn't running on `localhost:3000`. Run `npm start`. |
 | Status footer shows `NOT ON CHATGPT` | Active tab isn't on `chatgpt.com`. The content script only injects there. |
-| Status footer shows `ERROR READING CONTEXT` | ChatGPT's DOM changed. Check the selectors in [`content/content.js`](../../promptify-extension/content/content.js). |
+| Status footer shows `ERROR READING CONTEXT` | ChatGPT's DOM changed. Check the selectors in [`content/content.js`](../../extension/content/content.js). |
 | Optimize button does nothing | Open DevTools on the popup (right-click → *Inspect*) and check the console for fetch errors. |
 
 ## How the pieces fit together
 
 | File | Role |
 | --- | --- |
-| [`manifest.json`](../../promptify-extension/manifest.json) | Manifest V3 declaration, permissions, host scope |
-| [`background.js`](../../promptify-extension/background.js) | Service worker — updates the toolbar badge based on stored counts |
-| [`content/content.js`](../../promptify-extension/content/content.js) | Runs on `chatgpt.com`. Scrapes the input and conversation, exposes `GET_INPUT` / `GET_CONVO` / `SET_INPUT` messages, auto-injects pending summaries |
-| [`popup/popup.html`](../../promptify-extension/popup/popup.html) | Popup UI markup |
-| [`popup/popup.css`](../../promptify-extension/popup/popup.css) | Popup styles |
-| [`popup/popup.js`](../../promptify-extension/popup/popup.js) | Popup logic — calls the backend, drives the UI, manages settings |
+| [`manifest.json`](../../extension/manifest.json) | Manifest V3 declaration, permissions, host scope |
+| [`background.js`](../../extension/background.js) | Service worker — updates the toolbar badge based on stored counts |
+| [`content/content.js`](../../extension/content/content.js) | Runs on `chatgpt.com`. Scrapes the input and conversation, exposes `GET_INPUT` / `GET_CONVO` / `SET_INPUT` messages, auto-injects pending summaries |
+| [`popup/popup.html`](../../extension/popup/popup.html) | Popup UI markup |
+| [`popup/popup.css`](../../extension/popup/popup.css) | Popup styles |
+| [`popup/popup.js`](../../extension/popup/popup.js) | Popup logic — calls the backend, drives the UI, manages settings |

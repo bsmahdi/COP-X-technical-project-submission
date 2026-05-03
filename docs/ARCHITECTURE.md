@@ -10,14 +10,14 @@ behavior stays identical regardless of how the user invokes it.
 flowchart LR
     subgraph Surfaces[" "]
         direction TB
-        CLI[CLI<br/>cli.js]
-        WEB[Web UI<br/>public/index.html]
-        EXT[Chrome Extension<br/>promptify-extension/]
+        CLI[CLI<br/>cli/cli.js]
+        WEB[Web UI<br/>backend/public/index.html]
+        EXT[Chrome Extension<br/>extension/]
     end
 
     subgraph Backend[Backend]
-        SERVER[Express server<br/>server.js]
-        LIB[Core library<br/>lib.js]
+        SERVER[Express server<br/>backend/server.js]
+        LIB[Core library<br/>backend/lib.js]
     end
 
     OPENAI[(OpenAI<br/>Chat Completions API)]
@@ -36,7 +36,7 @@ endpoints, which internally call the same library functions.
 
 ## The two functions
 
-Both functions live in [`lib.js`](../lib.js) and use the cheap model
+Both functions live in [`backend/lib.js`](../backend/lib.js) and use the cheap model
 (`CHEAP_MODEL`, default `gpt-4o-mini`) for the actual call.
 
 ### `shorten(text)`
@@ -65,8 +65,8 @@ replaying the whole history.
 sequenceDiagram
     participant User
     participant Surface as Web UI / Extension
-    participant Server as Express server
-    participant Lib as lib.js
+    participant Server as backend/server.js
+    participant Lib as backend/lib.js
     participant OpenAI
 
     User->>Surface: paste / type prompt, click button
@@ -84,8 +84,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant User
-    participant CLI as cli.js
-    participant Lib as lib.js
+    participant CLI as cli/cli.js
+    participant Lib as backend/lib.js
     participant OpenAI
 
     User->>CLI: cop-x shorten ./prompt.txt
@@ -103,7 +103,7 @@ Token estimation uses a rough `chars / 4` heuristic for fast UI feedback.
 Real billing comes from `response.usage` returned by OpenAI, which is what
 `lib.calculateCost()` uses to compute the actual dollar cost.
 
-Default cost rates (per 1M tokens) are baked into [`lib.js`](../lib.js) and
+Default cost rates (per 1M tokens) are baked into [`backend/lib.js`](../backend/lib.js) and
 can be overridden in `.env`:
 
 | Variable                     | Default | Meaning                       |
@@ -117,14 +117,14 @@ can be overridden in `.env`:
 
 | Path                                                   | Role                              |
 | ------------------------------------------------------ | --------------------------------- |
-| [`lib.js`](../lib.js)                                  | Core: shorten / summarize / verify, cost helpers |
-| [`server.js`](../server.js)                            | Express server, exposes `/api/*` endpoints |
-| [`cli.js`](../cli.js)                                  | Commander-based CLI               |
-| [`batch-processor.js`](../batch-processor.js)          | Runs the full pipeline over `prompt examples/` |
-| [`public/index.html`](../public/index.html)            | Web UI single-page app            |
-| [`promptify-extension/manifest.json`](../promptify-extension/manifest.json) | Chrome extension manifest |
-| [`promptify-extension/popup/`](../promptify-extension/popup) | Extension popup (HTML/CSS/JS) |
-| [`promptify-extension/content/content.js`](../promptify-extension/content/content.js) | Content script — scrapes ChatGPT, replaces input |
-| [`promptify-extension/background.js`](../promptify-extension/background.js) | Service worker — badge updates |
-| [`prompt examples/`](../prompt%20examples)             | Reference inputs (prompts and conversations) |
-| [`output/`](../output)                                 | Outputs from `npm run test-batch` |
+| [`backend/lib.js`](../backend/lib.js)                  | Core: shorten / summarize / verify, cost helpers |
+| [`backend/server.js`](../backend/server.js)            | Express server, exposes `/api/*` endpoints |
+| [`cli/cli.js`](../cli/cli.js)                          | Commander-based CLI               |
+| [`cli/batch-processor.js`](../cli/batch-processor.js)  | Runs full pipeline over `cli/prompt examples/` |
+| [`backend/public/index.html`](../backend/public/index.html) | Web UI single-page app            |
+| [`extension/manifest.json`](../extension/manifest.json) | Chrome extension manifest |
+| [`extension/popup/`](../extension/popup)               | Extension popup (HTML/CSS/JS) |
+| [`extension/content/content.js`](../extension/content/content.js) | Content script — scrapes ChatGPT, replaces input |
+| [`extension/background.js`](../extension/background.js) | Service worker — badge updates |
+| [`cli/prompt examples/`](../cli/prompt%20examples)     | Reference inputs (prompts and conversations) |
+| [`cli/output/`](../cli/output)                         | Outputs from `npm run test-batch` |

@@ -1,0 +1,17 @@
+{
+  "name": "cop-x-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CLI Tools for Prompt Compression & Context Summarization",
+  "bin": {
+    "cop-x": "./cli.js"
+  },
+  "scripts": {
+    "test-batch": "node batch-processor.js"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "dotenv": "^17.4.2",
+    "openai": "^6.35.0"
+  }
+}

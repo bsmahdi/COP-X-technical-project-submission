@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="COP-X logo" width="140" />
+  <img src="docs/assets/logo.png" alt="COP-X logo" width="140" />
 </p>
 
 <h1 align="center">COP-X — Prompt Optimizer</h1>
@@ -39,7 +39,7 @@ expose this:
 On the reference inputs in this repo, `shorten` removes **97.4 %** of the
 tokens (5,144 → 132) and `summarize` removes **92.2 %** (4,768 → 370). Full
 numbers and the underlying input/output files live in
-[`prompt examples/`](./prompt%20examples) and [`output/`](./output).
+[`cli/prompt examples/`](./cli/prompt%20examples) and [`cli/output/`](./cli/output).
 
 → Read more: [Problem statement](docs/PROBLEM.md) ·
 [Technical abstract](docs/ABSTRACT.md) ·
@@ -51,11 +51,11 @@ numbers and the underlying input/output files live in
 
 ```mermaid
 flowchart LR
-    CLI[CLI<br/>cli.js]
-    WEB[Web UI<br/>public/index.html]
-    EXT[Chrome Extension<br/>promptify-extension/]
-    SERVER[Express server<br/>server.js]
-    LIB[Core library<br/>lib.js]
+    CLI[CLI<br/>cli/cli.js]
+    WEB[Web UI<br/>backend/public/index.html]
+    EXT[Chrome Extension<br/>extension/]
+    SERVER[Express server<br/>backend/server.js]
+    LIB[Core library<br/>backend/lib.js]
     OPENAI[(OpenAI API)]
 
     CLI -->|imports| LIB
@@ -76,7 +76,7 @@ flowchart LR
 Scriptable, file-based, pipeable.
 
 ```bash
-$ node cli.js shorten "./prompt examples/prompts/prompt example.txt"
+$ node cli/cli.js shorten "./cli/prompt examples/prompts/prompt example.txt"
 
 --- Prompt Compression ---
 Original tokens: 5144
@@ -127,16 +127,18 @@ git clone https://github.com/bsmahdi/COP-X-technical-project-submission.git
 cd COP-X-technical-project-submission
 
 # 2. Install
-npm install
+cd backend && npm install
+cd ../cli && npm install
 
 # 3. Configure
+cd ../backend
 cp .env.example .env
 # edit .env and set OPENAI_API_KEY=sk-...
 
 # 4. Pick your interface
-node cli.js shorten "./prompt examples/prompts/prompt example.txt"   # CLI
-npm start                                                            # Web UI on :3000
-# Chrome extension: chrome://extensions → Load unpacked → promptify-extension/
+node ../cli/cli.js shorten "../cli/prompt examples/prompts/prompt example.txt"   # CLI
+npm start                                                                    # Web UI on :3000 (from backend/)
+# Chrome extension: chrome://extensions → Load unpacked → extension/
 ```
 
 Each interface has its own getting-started guide — links above.
@@ -161,32 +163,34 @@ Each interface has its own getting-started guide — links above.
 
 ```
 .
-├── lib.js                    # Core: shorten / summarize / verify, cost helpers
-├── server.js                 # Express server, /api/shorten, /api/summarize
-├── cli.js                    # Commander-based CLI
-├── batch-processor.js        # Runs the full pipeline over the example corpus
-├── public/
-│   └── index.html            # Web UI (single page)
-├── promptify-extension/      # Chrome extension (Manifest V3)
+├── backend/                  # Server and core logic
+│   ├── lib.js                # Core: shorten / summarize / verify, cost helpers
+│   ├── server.js             # Express server, /api/shorten, /api/summarize
+│   ├── .env                  # Configuration
+│   ├── package.json
+│   └── public/               # Web UI (single page)
+├── cli/                      # Command-line tools
+│   ├── cli.js                # Commander-based CLI
+│   ├── batch-processor.js    # Runs full pipeline over example corpus
+│   ├── package.json
+│   ├── prompt examples/      # Reference inputs
+│   └── output/               # Batch processing results
+├── extension/                # Chrome extension (Manifest V3)
 │   ├── manifest.json
 │   ├── background.js         # Service worker — toolbar badge
-│   ├── content/content.js    # ChatGPT content script
-│   └── popup/                # popup.html / popup.css / popup.js
-├── prompt examples/          # Reference inputs
-│   ├── prompts/              # One-shot prompts (for shorten)
-│   └── convos/               # Conversation transcripts (for summarize)
-├── output/                   # Outputs from `npm run test-batch`
-├── docs/                     # All documentation (you are here)
-│   ├── ABSTRACT.md
-│   ├── PROBLEM.md
-│   ├── ARCHITECTURE.md
-│   ├── USE_CASES.md
-│   ├── getting-started/
-│   │   ├── CLI.md
-│   │   ├── WEB.md
-│   │   └── EXTENSION.md
-│   └── screenshots/
-└── assets/                   # Logo
+│   ├── dancing plants.gif    # Success animation
+│   ├── content/              # ChatGPT content script
+│   └── popup/                # UI for the extension
+└── docs/                     # Documentation and examples
+    ├── ABSTRACT.md
+    ├── PROBLEM.md
+    ├── ARCHITECTURE.md
+    ├── USE_CASES.md
+    ├── getting-started/      # Guides for CLI, Web, and Extension
+    ├── screenshots/          # UI previews
+    ├── examples/             # Raw ChatGPT HTML captures
+    └── assets/               # Project logos
+
 ```
 
 ---

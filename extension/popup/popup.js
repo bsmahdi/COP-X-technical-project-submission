@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const text = await getConvoText();
       if (!text) {
-        newChatBtn.classList.remove('spinning');
+        newChatBtn.classList.remove('loading');
         return;
       }
 

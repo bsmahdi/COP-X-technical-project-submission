@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { shorten, summarize, verify, estimateTokens, calculateCost, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST } from './lib.js';
+import { shorten, summarize, verify, estimateTokens, calculateCost, EXPENSIVE_INPUT_COST, EXPENSIVE_OUTPUT_COST } from '../backend/lib.js';
 
 async function main() {
-  const baseInputDir = path.join(process.cwd(), 'prompt examples');
-  const baseOutputDir = path.join(process.cwd(), 'output');
+  const __dirname = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)/, '$1');
+  const baseInputDir = path.join(__dirname, 'prompt examples');
+  const baseOutputDir = path.join(__dirname, 'output');
 
   const categories = [
     { name: 'prompts', isConversation: false, shouldRunExpensive: true },

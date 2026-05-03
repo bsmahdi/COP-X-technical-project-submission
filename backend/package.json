@@ -1,0 +1,16 @@
+{
+  "name": "cop-x-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API for Prompt Compression & Context Summarization",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "openai": "^6.35.0"
+  }
+}

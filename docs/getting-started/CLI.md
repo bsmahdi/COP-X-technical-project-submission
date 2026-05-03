@@ -11,12 +11,12 @@ piping output into other tools, and offline use without running a server.
 ## Install
 
 From the repository root:
-
-```bash
+cd cli
 npm install
+cd ../backend
 cp .env.example .env
 # then edit .env and set OPENAI_API_KEY=sk-...
-```
+cd ../cli
 
 ## Two commands
 
